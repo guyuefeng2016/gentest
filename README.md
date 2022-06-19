@@ -1,6 +1,7 @@
 # gentest
 自动化测试
 使用步骤：
+
 （1）下载gentest，然后mvn install 安装
 
  (2) 引入当前依赖
