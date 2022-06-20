@@ -3,6 +3,7 @@ package com.gentest.gen;
 import com.alibaba.fastjson.JSONObject;
 import com.gentest.annotation.GenAnnotation;
 import com.gentest.common.GenCommon;
+import com.gentest.common.GenDingPush;
 import com.gentest.common.GenSpringContextHolder;
 import com.gentest.enums.GenCtx;
 import com.gentest.exception.TypeNotSupportException;
@@ -150,8 +151,13 @@ public class GenTestCase {
                         Object[] paramArgs = new Object[paramsLength];
                         AtomicInteger argIndex = new AtomicInteger(0);
 
-                        for (Type genericType : genericParameterTypes) {
-                            convertType(genericType, paramArgs, argIndex, annotationMap);
+                        try {
+                            for (Type genericType : genericParameterTypes) {
+                                convertType(genericType, paramArgs, argIndex, annotationMap);
+                            }
+                        } catch (Exception e){
+                            log.error("e=",e);
+                            continue;
                         }
 
                         doInvoke(method, bean, paramArgs, genCtxVo, inputLogInfo, inputLogPerformance);
@@ -162,9 +168,13 @@ public class GenTestCase {
                 }
             }
             Queue<String> queue = GenReport.printReport(false);
+            boolean dingPush = false;
 
             if (!CollectionUtils.isEmpty(queue)) {
-//                GenDingPush dingDingPush = GenSpringContextHolder.getBean(GenDingPush.class);
+                GenDingPush dingDingPush = null;
+                if (dingPush){
+                    dingDingPush = GenSpringContextHolder.getBean(GenDingPush.class);
+                }
                 StringBuilder dingSb = new StringBuilder();
 
                 while (queue.size() > 0) {
@@ -173,16 +183,24 @@ public class GenTestCase {
                 while (dingSb.length() > 0) {
                     if (dingSb.length() > 4000) {
                         String dingText = dingSb.substring(0, 4000);
-//                        dingDingPush.sendPush(dingText);
-                        System.out.println(dingText);
+                        if (dingPush) {
+                            dingDingPush.sendPush(dingText);
+                        } else {
+                            System.out.println(dingText);
+                        }
                         dingSb.delete(0, 4000);
                     } else {
-//                        dingDingPush.sendPush(dingSb.toString());
-                        System.out.println(dingSb.toString());
+                        if (dingPush) {
+                            dingDingPush.sendPush(dingSb.toString());
+                        } else {
+                            System.out.println(dingSb.toString());
+                        }
                         dingSb.delete(0, dingSb.length());
                     }
                     try {
-                        Thread.sleep(5000);
+                        if (dingPush){
+                            Thread.sleep(5000);
+                        }
                     } catch (Exception e) {
                     }
                 }
@@ -268,6 +286,7 @@ public class GenTestCase {
         }
     }
 
+
     /**
      *
      * @param genericType
@@ -282,6 +301,11 @@ public class GenTestCase {
             String[] split = annotationValue.split("#");
             int randomIndex = RandomUtils.nextInt(0, split.length);
             annotationValue = split[randomIndex];
+        } else {
+            if (annotationValue != null){
+                paramArgs[argIndex.getAndIncrement()] = annotationValue;
+                return;
+            }
         }
 
         if (genericType instanceof ParameterizedType) {

@@ -51,7 +51,7 @@ public class GenReport {
             AtomicInteger performanceCount = genReportData.getPerformanceCount();
 
             if (extraReport.length() > 0){
-                String line3 = "（ " + methodIndex++ + " ） " + extraReport.toString() + "\n";
+                String line3 = "\n（ " + methodIndex++ + " ） " + extraReport.toString() + "\n";
                 lineSb.append(line3);
                 if (printFlag) {
                     System.out.println(line3);

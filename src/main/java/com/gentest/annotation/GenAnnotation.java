@@ -122,9 +122,9 @@ public class GenAnnotation {
                 for (GenParam genParam : values) {
                     int index = genParam.argIndex();
                     String value = genParam.value();
-                    if (StringUtils.isEmpty(value)) {
-                        continue;
-                    }
+//                    if (StringUtils.isEmpty(value)) {
+//                        continue;
+//                    }
                     if (index == 0){
                         index = argIndex++;
                     }
