@@ -2,18 +2,18 @@
 自动化测试
 使用步骤：
 
-（1）下载gentest，然后mvn install 安装
+(1)下载gentest，然后mvn install 安装
 
- (2) 引入当前依赖
+(2) 引入当前依赖
      <dependency>
             <groupId>com.gentest</groupId>
             <artifactId>gen-test</artifactId>
             <version>0.0.1</version>
         </dependency>
 
- (3) 在springboot的启动类上面加上对gentest的扫描 @SpringBootApplication(scanBasePackages = {"com.gentest"})
+(3) 在springboot的启动类上面加上对gentest的扫描 @SpringBootApplication(scanBasePackages = {"com.gentest"})
 
-（4）然后随便创建一个java类，直接写一个main方法测试
+(4)然后随便创建一个java类，直接写一个main方法测试
 
     
     public static void main(String[] args) {
