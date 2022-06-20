@@ -3,9 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="4bbd49d8-2315-462f-ae1a-c63e2b9bd25a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/annotation/GenAnnotation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/annotation/GenAnnotation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/report/GenReport.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/report/GenReport.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -44,7 +43,7 @@
     <option name="generalSettings">
       <MavenGeneralSettings>
         <option name="localRepository" value="$MAVEN_REPOSITORY$" />
-        <option name="userSettingsFile" value="$USER_HOME$/.m2/settings_copy.xml" />
+        <option name="userSettingsFile" value="$USER_HOME$/.m2/settings-aql.xml" />
       </MavenGeneralSettings>
     </option>
     <option name="importingSettings">
@@ -138,7 +137,7 @@
       <workItem from="1655546946596" duration="2117000" />
       <workItem from="1655549106272" duration="3990000" />
       <workItem from="1655616124641" duration="2303000" />
-      <workItem from="1655692381678" duration="4812000" />
+      <workItem from="1655692381678" duration="9520000" />
     </task>
     <servers />
   </component>

@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static org.junit.jupiter.params.shadow.com.univocity.parsers.conversions.Conversions.trim;
+
 /**
  * @description:
  * @author: guyuefeng
@@ -65,44 +67,70 @@ public class GenTestCase {
             if (onlyClassNameArr != null && onlyClassNameArr.length > 0){
                 for (String clazzMethod: onlyClassNameArr){
                     String[] split = clazzMethod.split(":");
-                    String clazz = split[0].trim();
-                    String methodStr = split[1].trim();
-                    String[] methodArr = methodStr.split("#");
-                    onlyClassNameList.put(clazz, Arrays.asList(methodArr));
+                    String key = split[0];
+                    String value = "";
+
+                    if (StringUtils.isEmpty(key)){
+                        continue;
+                    }
+                    String clazz = key.trim();
+                    String methodStr = "";
+
+                    if (split.length == 2){
+                        value = split[1];
+                    }
+
+                    if (StringUtils.isNotEmpty(value)){
+                        methodStr = split[1].trim();
+                        String[] methodArr = methodStr.split("#");
+                        onlyClassNameList.put(clazz, Arrays.asList(methodArr));
+                    } else {
+                        onlyClassNameList.put(clazz, new ArrayList<>());
+                    }
                 }
             }
 
             PathMatchingResourcePatternResolver pathMatchingResourcePatternResolver = new PathMatchingResourcePatternResolver();
             CachingMetadataReaderFactory cachingMetadataReaderFactory = new CachingMetadataReaderFactory();
-            Resource[] resources = pathMatchingResourcePatternResolver.getResources("classpath*:" + testPackage + "/**/*.class");
+
+            Iterator<String> clazzIterator = null;
+            Resource[] resources = null;
+            if (CollectionUtils.isEmpty(onlyClassNameList)){
+                resources = pathMatchingResourcePatternResolver.getResources("classpath*:" + testPackage + "/**/*.class");
+            } else {
+                resources = new Resource[onlyClassNameList.size()];
+                clazzIterator = onlyClassNameList.keySet().iterator();
+            }
+
+
             ClassLoader loader = ClassLoader.getSystemClassLoader();
             SpringApplication.run(applicationClass, args);
 
-            boolean filterMethod = false;
-            List<String> filtermMethodList = new ArrayList<>();
-
             for (Resource resource : resources) {
                 try {
-                    MetadataReader reader = cachingMetadataReaderFactory.getMetadataReader(resource);
-                    String className = reader.getClassMetadata().getClassName();
-                    Class classz = loader.loadClass(className);
+                    boolean filterMethod = false;
+                    List<String> filtermMethodList = new ArrayList<>();
+                    String className = "";
+                    MetadataReader reader = null;
+                    if (CollectionUtils.isEmpty(onlyClassNameList)){
+                        reader = cachingMetadataReaderFactory.getMetadataReader(resource);
+                        className = reader.getClassMetadata().getClassName();
+                    } else {
+                        className = clazzIterator.next();
+                        List<String> methodList = onlyClassNameList.get(className);
+                        if (!CollectionUtils.isEmpty(methodList)) {
+                            filterMethod = true;
+                            filtermMethodList = methodList;
+                        }
+                    }
+
+                    Class classz = loader.loadClass(className);;
 
                     if (classz.isInterface()) {
                         continue;
                     }
                     if (className.indexOf("GenTestCase") != -1) {
                         continue;
-                    }
-
-                    if (!CollectionUtils.isEmpty(onlyClassNameList)) {
-                        if (!onlyClassNameList.containsKey(className)) {
-                            continue;
-                        }
-                        List<String> methodList = onlyClassNameList.get(className);
-                        if (!CollectionUtils.isEmpty(methodList)) {
-                            filterMethod = true;
-                            filtermMethodList = methodList;
-                        }
                     }
 
                     Object bean;
