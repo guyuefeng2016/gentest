@@ -3,7 +3,6 @@ package com.gentest.gen;
 import com.alibaba.fastjson.JSONObject;
 import com.gentest.annotation.GenAnnotation;
 import com.gentest.common.GenCommon;
-import com.gentest.common.GenDingPush;
 import com.gentest.common.GenSpringContextHolder;
 import com.gentest.enums.GenCtx;
 import com.gentest.exception.TypeNotSupportException;
@@ -199,9 +198,9 @@ public class GenTestCase {
             boolean dingPush = false;
 
             if (!CollectionUtils.isEmpty(queue)) {
-                GenDingPush dingDingPush = null;
+//                GenDingPush dingDingPush = null;
                 if (dingPush){
-                    dingDingPush = GenSpringContextHolder.getBean(GenDingPush.class);
+//                    dingDingPush = GenSpringContextHolder.getBean(GenDingPush.class);
                 }
                 StringBuilder dingSb = new StringBuilder();
 
@@ -212,14 +211,14 @@ public class GenTestCase {
                     if (dingSb.length() > 4000) {
                         String dingText = dingSb.substring(0, 4000);
                         if (dingPush) {
-                            dingDingPush.sendPush(dingText);
+//                            dingDingPush.sendPush(dingText);
                         } else {
                             System.out.println(dingText);
                         }
                         dingSb.delete(0, 4000);
                     } else {
                         if (dingPush) {
-                            dingDingPush.sendPush(dingSb.toString());
+//                            dingDingPush.sendPush(dingSb.toString());
                         } else {
                             System.out.println(dingSb.toString());
                         }
