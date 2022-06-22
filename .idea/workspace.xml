@@ -2,9 +2,19 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4bbd49d8-2315-462f-ae1a-c63e2b9bd25a" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/gentest/Applications.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/CaseInput.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/GenCaseInfo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/GenerateFileService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/SouceCodeInfo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/TestCaseInfo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/application.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/templates/testcase.ftl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/BaseTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/Test1.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/common/GenDingPush.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/common/GenDingPush.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/config/GenExecutorConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/config/GenExecutorConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/ApplicationM.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -57,8 +67,11 @@
     <option name="version" value="1" />
   </component>
   <component name="ProjectId" id="2AkI1flnyFfeTbSDWzhjrKNUm6Z" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
@@ -70,11 +83,14 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.gentest.gencode" />
       <recent name="com.safeheron.config" />
       <recent name="com.gentest.common" />
       <recent name="com.gentest.gen" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/main/java/com/gentest/gencode" />
+      <recent name="$PROJECT_DIR$/src/main/resources/templates" />
       <recent name="$PROJECT_DIR$/src/main/java/com/gentest/common" />
       <recent name="$PROJECT_DIR$/src/main/java/com/gentest/gen" />
     </key>
@@ -91,9 +107,9 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.GenTestCase">
-    <configuration name="ApplicationM" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.gentest.ApplicationM" />
+  <component name="RunManager" selected="Application.GenerateFileService">
+    <configuration name="Applications" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.gentest.Applications" />
       <module name="gentest" />
       <extension name="coverage">
         <pattern>
@@ -118,10 +134,46 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="GenerateFileService" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.gentest.gencode.GenerateFileService" />
+      <module name="gentest" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.gentest.gencode.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test1.test1" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="gentest" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="Test1" />
+      <option name="METHOD_NAME" value="test1" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test1.test2" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="gentest" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="MAIN_CLASS_NAME" value="Test1" />
+      <option name="METHOD_NAME" value="test2" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.GenerateFileService" />
         <item itemvalue="Application.GenTestCase" />
-        <item itemvalue="Application.ApplicationM" />
+        <item itemvalue="JUnit.Test1.test2" />
+        <item itemvalue="Application.Applications" />
+        <item itemvalue="JUnit.Test1.test1" />
       </list>
     </recent_temporary>
   </component>
@@ -138,7 +190,10 @@
       <workItem from="1655546946596" duration="2117000" />
       <workItem from="1655549106272" duration="3990000" />
       <workItem from="1655616124641" duration="2303000" />
-      <workItem from="1655692381678" duration="12220000" />
+      <workItem from="1655692381678" duration="19769000" />
+      <workItem from="1655738418457" duration="12045000" />
+      <workItem from="1655789889231" duration="21347000" />
+      <workItem from="1655822114938" duration="33180000" />
     </task>
     <servers />
   </component>
@@ -158,6 +213,9 @@
       </map>
     </option>
   </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
@@ -168,6 +226,11 @@
             <option name="EMULATED" value="true" />
           </properties>
           <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java</url>
+          <line>48</line>
+          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

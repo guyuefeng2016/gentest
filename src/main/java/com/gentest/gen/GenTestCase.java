@@ -6,6 +6,9 @@ import com.gentest.common.GenCommon;
 import com.gentest.common.GenSpringContextHolder;
 import com.gentest.enums.GenCtx;
 import com.gentest.exception.TypeNotSupportException;
+import com.gentest.gencode.CaseInput;
+import com.gentest.gencode.GenerateFileService;
+import com.gentest.gencode.TestCaseInfo;
 import com.gentest.report.GenReport;
 import com.gentest.vo.GenCtxVo;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.params.shadow.com.univocity.parsers.conversions.Conversions.trim;
-
 /**
  * @description:
  * @author: guyuefeng
@@ -41,12 +42,27 @@ import static org.junit.jupiter.params.shadow.com.univocity.parsers.conversions.
 @Slf4j
 public class GenTestCase {
 
+    public static void main(String[] args) throws Exception{
+        Class<?> aClass = Class.forName("com.gentest.gen.GenTestCase");
+        Method convertType = aClass.getDeclaredMethod("convertType", Type.class, Object[].class, AtomicInteger.class, Map.class);
+        Class<?> returnType = convertType.getReturnType();
+        System.out.println(returnType);
+        System.out.println(convertType.getGenericReturnType().getTypeName().equals("void"));
+
+        System.out.println("-------");
+        Method doInvoke = aClass.getDeclaredMethod("conveterSimpleResultSouceCode", StringBuilder.class, Object.class);
+        Class<?> returnType1 = doInvoke.getReturnType();
+        System.out.println(returnType1);
+        System.out.println(doInvoke.getGenericReturnType().getTypeName().equals("void"));
+    }
+
 //    public static void main(String[] args) {
 //        String testPackage = "com/safeheron/gateway/repository";
 //
 //        test(testPackage, WebApplication.class, args, new String[]{"com.safeheron.gateway.repository.AommonRepository2:test8#test9",
 //                "com.safeheron.gateway.repository.MpcTaskManagerRepository:descreseTimeOutCreatePartyTaskCount#getMpcTaskSessionIdIp" },null, null);
 //    }
+
 
     /**
      * 全局控制字段,用户输入优先级高于配置优先级
@@ -60,7 +76,7 @@ public class GenTestCase {
      * @param inputLogInfo 是否输出info日志
      * @param inputLogPerformance 是否输出性能日志
      */
-    public static void test(String testPackage, Class applicationClass,  String[] args, String[] onlyClassNameArr, Boolean inputLogInfo, Boolean inputLogPerformance) {
+    public static void test(String testPackage, Class applicationClass, String[] args, String[] onlyClassNameArr, Boolean inputLogInfo, Boolean inputLogPerformance, Boolean generateCase, CaseInput caseInput) {
         try {
             Map<String, List<String>> onlyClassNameList = new HashMap<>();
             if (onlyClassNameArr != null && onlyClassNameArr.length > 0){
@@ -105,6 +121,7 @@ public class GenTestCase {
             ClassLoader loader = ClassLoader.getSystemClassLoader();
             SpringApplication.run(applicationClass, args);
 
+            List<TestCaseInfo> testCaseInfoList = new LinkedList<>();
             for (Resource resource : resources) {
                 try {
                     boolean filterMethod = false;
@@ -143,6 +160,20 @@ public class GenTestCase {
                         continue;
                     }
 
+                    String testCaseRepositoryPackage = className;
+                    String testCaseClassName = classz.getSimpleName();
+                    List<Map<String, Object[]>> testCaseMethodsMapList = new LinkedList<>();
+                    List<Map<Integer, StringBuilder>> testCaseMethodSouceCodeList = new LinkedList<>();
+                    List<Map<String, Object>> returnTypeList = new LinkedList<>();
+
+                    TestCaseInfo caseInfo = new TestCaseInfo();
+                    caseInfo.setTestCaseClassName(testCaseClassName);
+                    caseInfo.setTestCaseRepositoryPackage(testCaseRepositoryPackage);
+                    caseInfo.setTestCaseMethodsMapList(testCaseMethodsMapList);
+                    caseInfo.setMethodSourceCode(testCaseMethodSouceCodeList);
+                    caseInfo.setReturnTypeList(returnTypeList);
+                    testCaseInfoList.add(caseInfo);
+
                     GenCtx clazzGenCtx = GenAnnotation.parseClassAnnotation(classz);
                     if (clazzGenCtx != null) {
                         if (clazzGenCtx.skip()) {
@@ -177,17 +208,28 @@ public class GenTestCase {
                         int paramsLength = genericParameterTypes.length;
                         Object[] paramArgs = new Object[paramsLength];
                         AtomicInteger argIndex = new AtomicInteger(0);
-
                         try {
+                            Map<Integer, StringBuilder> methodResultSourceCode = new LinkedHashMap<>();
                             for (Type genericType : genericParameterTypes) {
-                                convertType(genericType, paramArgs, argIndex, annotationMap);
+                                Map<Integer, StringBuilder> methodSourceCode = convertType(genericType, paramArgs, argIndex, annotationMap);
+
+                                if (!Modifier.isPrivate(method.getModifiers())) {
+                                    if (methodSourceCode.size() > 0){
+                                        methodSourceCode.forEach((key,val) -> {
+                                            methodResultSourceCode.put(methodResultSourceCode.size(),val);
+                                        });
+                                    }
+                                }
+                            }
+                            if (!Modifier.isPrivate(method.getModifiers())) {
+                                testCaseMethodSouceCodeList.add(methodResultSourceCode);
                             }
                         } catch (Exception e){
                             log.error("e=",e);
                             continue;
                         }
 
-                        doInvoke(method, bean, paramArgs, genCtxVo, inputLogInfo, inputLogPerformance);
+                        doInvoke(method, bean, paramArgs, genCtxVo, inputLogInfo, inputLogPerformance, testCaseMethodsMapList, returnTypeList);
                     }
                 } catch (Exception e){
                     log.error("解析失败 resource:{}, e=",resource,e);
@@ -198,6 +240,29 @@ public class GenTestCase {
             boolean dingPush = false;
 
             if (!CollectionUtils.isEmpty(queue)) {
+                if (generateCase != null && generateCase){
+                    if (!CollectionUtils.isEmpty(testCaseInfoList)) {
+                        String author = null;
+                        String comment = null;
+                        String outputDir = "";
+                        String testCasePackage = "";
+                        if (caseInput != null) {
+                            author = caseInput.getAuthor();
+                            comment = caseInput.getComment();
+                            testCasePackage = caseInput.getTestCasePackage();
+                            String odr = caseInput.getOutputDir();
+                            outputDir = StringUtils.isNotEmpty(odr) ? odr : (System.getProperty("user.dir") + "/src/test/java/com/gentest");
+                        } else {
+                            outputDir = System.getProperty("user.dir") + "/src/test/java/com/gentest";
+                        }
+                        GenerateFileService generateFileService = GenSpringContextHolder.getBean(GenerateFileService.class);
+
+                        for (TestCaseInfo caseInfo : testCaseInfoList){
+                            generateFileService.genTestCase(testCasePackage, caseInfo.getTestCaseRepositoryPackage() , caseInfo.getTestCaseClassName(),
+                                    author, comment, caseInfo.getTestCaseMethodsMapList(), caseInfo.getMethodSourceCode(), caseInfo.getReturnTypeList(), outputDir);
+                        }
+                    }
+                }
 //                GenDingPush dingDingPush = null;
                 if (dingPush){
 //                    dingDingPush = GenSpringContextHolder.getBean(GenDingPush.class);
@@ -237,6 +302,7 @@ public class GenTestCase {
         }
     }
 
+
     /**
      *
      * @param method
@@ -246,8 +312,13 @@ public class GenTestCase {
      * @param inputLogInfo
      * @param inputLogPerformance
      */
-    private static void doInvoke(Method method, Object bean, Object[] paramArgs, GenCtxVo genCtxVo, Boolean inputLogInfo, Boolean inputLogPerformance){
+    private static void doInvoke(Method method, Object bean, Object[] paramArgs, GenCtxVo genCtxVo, Boolean inputLogInfo, Boolean inputLogPerformance, List<Map<String, Object[]>> testCaseMethodsMapList, List<Map<String, Object>> returnTypeList){
         String methodName = method.getName();
+        if (!Modifier.isPrivate(method.getModifiers())) {
+            Map<String, Object[]> methodMap = new LinkedHashMap<>();
+            methodMap.put(methodName, paramArgs);
+            testCaseMethodsMapList.add(methodMap);
+        }
         try{
             Boolean enableThread = genCtxVo.getEnableThread();
             Integer threadCount = genCtxVo.getThreadCount();
@@ -271,9 +342,20 @@ public class GenTestCase {
                         }
                     });
                 } else {
-                    resultRef.set(method.invoke(bean, paramArgs));
+                    try {
+                        resultRef.set(method.invoke(bean, paramArgs));
+                    } catch (Exception e) {
+                        threadExceptionRef.set(e);
+                    }
                 }
             }
+            if (!Modifier.isPrivate(method.getModifiers())) {
+                String typeName = method.getGenericReturnType().getTypeName();
+                Map<String, Object> returnTypeMap = new LinkedHashMap<>();
+                returnTypeMap.put(typeName, resultRef.get());
+                returnTypeList.add(returnTypeMap);
+            }
+
             Exception exception = threadExceptionRef.get();
             if (exception != null){
                 throw exception;
@@ -282,6 +364,7 @@ public class GenTestCase {
             if (enableThread){
                 pool.shutdown();
             }
+
             Boolean logPerformance = genCtxVo.getLogPerformance();
             if (inputLogPerformance != null){
                 logPerformance = inputLogPerformance;
@@ -313,7 +396,6 @@ public class GenTestCase {
         }
     }
 
-
     /**
      *
      * @param genericType
@@ -321,7 +403,8 @@ public class GenTestCase {
      * @param argIndex
      * @param annotationMap
      */
-    public static void convertType(Type genericType, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, String> annotationMap){
+    public static Map<Integer, StringBuilder> convertType(Type genericType, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, String> annotationMap){
+        Map<Integer, StringBuilder> sourceCodeMap = new LinkedHashMap<>();
         String annotationValue = annotationMap.get(argIndex.get());
 
         if (StringUtils.isNotEmpty(annotationValue)){
@@ -331,7 +414,7 @@ public class GenTestCase {
         } else {
             if (annotationValue != null){
                 paramArgs[argIndex.getAndIncrement()] = annotationValue;
-                return;
+                return sourceCodeMap;
             }
         }
 
@@ -339,28 +422,44 @@ public class GenTestCase {
             Class<?> rawType = ((ParameterizedTypeImpl) genericType).getRawType();
             Type[] actualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
 
-            parseParameterizedType(rawType, annotationValue, actualTypeArguments, paramArgs, argIndex);
+            parseParameterizedType(rawType, annotationValue, actualTypeArguments, paramArgs, argIndex, sourceCodeMap);
         } else {
             Class genericTypeAssign = (Class) genericType;
 
             if (genericTypeAssign.isArray()){
                 Class componentType = genericTypeAssign.getComponentType();
+                String componentName = componentType.getName();
+
+                Integer currentVarIndex = sourceCodeMap.size();
+                StringBuilder currentSourceCode = new StringBuilder();
+                currentSourceCode.append(componentName+"[] var").append(argIndex.get()).append(currentVarIndex).append(" = new "+componentName+"[").append(annotationValue.split(",").length).append("];");
+                sourceCodeMap.put(currentVarIndex, currentSourceCode);
 
                 if (StringUtils.isNotEmpty(annotationValue)){
                     List<Object> resListVal = new LinkedList<>();
-                    doConvertListValueType(componentType, annotationValue, resListVal);
+                    doConvertListValueType(componentType, annotationValue, resListVal, sourceCodeMap, argIndex);
 
                     int arrLen = resListVal.size();
                     Object arrObj = Array.newInstance(componentType, arrLen);
 
+                    int localVarIndex = currentVarIndex+1;
                     for (int i=0; i<arrLen; i++){
                         Array.set(arrObj, i, resListVal.get(i));
+
+                        StringBuilder currentSourceCode2 = new StringBuilder();
+                        Integer currentVarIndex2 = sourceCodeMap.size();
+                        currentSourceCode2.append("var").append(argIndex.get()).append(currentVarIndex).append("[").append(i).append("]").append(" = ").append("var").append(argIndex.get()).append(localVarIndex++).append(";");
+                        sourceCodeMap.put(currentVarIndex2, currentSourceCode2);
                     }
                     paramArgs[argIndex.getAndIncrement()] = arrObj;
                 } else {
                     Object[] newParams = new Object[1];
                     int newParamsIndex = 0;
-                    doConvertNoValueType(componentType, newParams, newParamsIndex);
+                    doConvertNoValueType(componentType, newParams, newParamsIndex, sourceCodeMap, argIndex);
+
+                    StringBuilder currentSourceCode2 = new StringBuilder();
+                    currentSourceCode2.append("var").append(argIndex.get()).append(currentVarIndex).append("[0]").append(" = ").append("var").append(argIndex.get()).append(currentVarIndex+1).append(";");
+                    sourceCodeMap.put(sourceCodeMap.size(), currentSourceCode2);
 
                     Object arrObj = Array.newInstance(componentType, 1);
                     Array.set(arrObj, 0, newParams[newParamsIndex]);
@@ -369,17 +468,18 @@ public class GenTestCase {
             } else {
                 if (StringUtils.isNotEmpty(annotationValue)){
                     List<Object> resListVal = new LinkedList<>();
-                    doConvertValueType(genericTypeAssign, new Object[]{annotationValue}, resListVal);
+                    doConvertValueType(genericTypeAssign, new Object[]{annotationValue}, resListVal, sourceCodeMap, argIndex);
 
                     paramArgs[argIndex.getAndIncrement()] = resListVal.get(0);
                 } else {
-                    Boolean conveterNoDataType = doConvertNoValueType(genericTypeAssign, paramArgs, argIndex.get());
+                    Boolean conveterNoDataType = doConvertNoValueType(genericTypeAssign, paramArgs, argIndex.get(), sourceCodeMap, argIndex);
                     if (conveterNoDataType){
                         argIndex.getAndIncrement();
                     }
                 }
             }
         }
+        return sourceCodeMap;
     }
 
 
@@ -390,10 +490,10 @@ public class GenTestCase {
      * @param resList
      * @return
      */
-    public static Boolean doConvertValueType(Class actualTypeArgClass, Object[] datas, List<Object> resList){
-        Boolean conveterSimpleTypeFlag = conveterSimpleType(actualTypeArgClass, datas, resList);
+    public static Boolean doConvertValueType(Class actualTypeArgClass, Object[] datas, List<Object> resList, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
+        Boolean conveterSimpleTypeFlag = conveterSimpleType(actualTypeArgClass, datas, resList, sourceCodeMap, null, argIndex);
         if (!conveterSimpleTypeFlag){
-            Boolean aBoolean = converBeanType(actualTypeArgClass, null, datas, resList);
+            Boolean aBoolean = converBeanType(actualTypeArgClass, null, datas, resList, sourceCodeMap, argIndex);
             if (!aBoolean){
                 throw new TypeNotSupportException(actualTypeArgClass.getTypeName());
             }
@@ -408,10 +508,10 @@ public class GenTestCase {
      * @param argIndex
      * @return
      */
-    public static Boolean doConvertNoValueType(Class actualTypeArgClass, Object[] newParams, Integer argIndex){
-        Boolean aBoolean = adapterSimpleType(actualTypeArgClass, newParams, argIndex);
+    public static Boolean doConvertNoValueType(Class actualTypeArgClass, Object[] newParams, Integer paramsIndex, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
+        Boolean aBoolean = adapterSimpleType(actualTypeArgClass, newParams, paramsIndex, sourceCodeMap, null, argIndex);
         if (!aBoolean){
-            Boolean adapterType = adapterBeanType(actualTypeArgClass, null, newParams, argIndex);
+            Boolean adapterType = adapterBeanType(actualTypeArgClass, null, newParams, paramsIndex, sourceCodeMap, argIndex);
             if (!adapterType){
                 throw new TypeNotSupportException(actualTypeArgClass.getTypeName());
             }
@@ -426,12 +526,12 @@ public class GenTestCase {
      * @param resListVal
      * @return
      */
-    public static Boolean doConvertListValueType(Class actualTypeArgClass, String annotationValue, List<Object> resListVal){
+    public static Boolean doConvertListValueType(Class actualTypeArgClass, String annotationValue, List<Object> resListVal, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
         String[] splitArr = annotationValue.split(",");
-        Boolean conveterSimpleTypeFlag = conveterSimpleType(actualTypeArgClass, splitArr, resListVal);
+        Boolean conveterSimpleTypeFlag = conveterSimpleType(actualTypeArgClass, splitArr, resListVal, sourceCodeMap, null, argIndex);
         if (!conveterSimpleTypeFlag) {
             for (String split : splitArr) {
-                Boolean aBoolean = converBeanType(actualTypeArgClass, null, new Object[]{split}, resListVal);
+                Boolean aBoolean = converBeanType(actualTypeArgClass, null, new Object[]{split}, resListVal, sourceCodeMap, argIndex);
                 if (!aBoolean) {
                     throw new TypeNotSupportException(actualTypeArgClass.getTypeName());
                 }
@@ -448,7 +548,7 @@ public class GenTestCase {
      * @param argIndex
      * @return
      */
-    public static Map doConvertTypeMap(String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex){
+    public static Map doConvertTypeMap(String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
         List<Object> resListKey = new LinkedList<>();
         List<Object> resListVal = new LinkedList<>();
         Map map1;
@@ -463,20 +563,27 @@ public class GenTestCase {
         Type actualTypeArgumentKey = actualTypeArguments[0];
         Type actualTypeArgumentVal = actualTypeArguments[1];
 
+        int currentSourceSize = sourceCodeMap.size();
+        conveterSimpleTypeSourceCode(sourceCodeMap, "Map", "new LinkedHashMap<>()", argIndex);
+
+        List<Integer> localKeyIndex = new LinkedList<>();
+
         if (actualTypeArgumentKey instanceof ParameterizedType){
             Class<?> actualRawTypeInner = ((ParameterizedTypeImpl) actualTypeArgumentKey).getRawType();
             Type[] actualTypeArgsInnerArr = ((ParameterizedType) actualTypeArgumentKey).getActualTypeArguments();
 
             if (objectsKey != null && objectsKey.length >0) {
                 for (Object objKey : objectsKey) {
-                    Object o = parseParameterizedType(actualRawTypeInner, objKey.toString(), actualTypeArgsInnerArr, paramArgs, argIndex);
+                    localKeyIndex.add(sourceCodeMap.size());
+                    Object o = parseParameterizedType(actualRawTypeInner, objKey.toString(), actualTypeArgsInnerArr, paramArgs, argIndex, sourceCodeMap);
                     if (o != null) {
                         argIndex.decrementAndGet();
                     }
                     resListKey.add(o);
                 }
             } else {
-                Object o = parseParameterizedType(actualRawTypeInner, "", actualTypeArgsInnerArr, paramArgs, argIndex);
+                localKeyIndex.add(sourceCodeMap.size());
+                Object o = parseParameterizedType(actualRawTypeInner, "", actualTypeArgsInnerArr, paramArgs, argIndex, sourceCodeMap);
                 if (o != null) {
                     argIndex.decrementAndGet();
                 }
@@ -484,14 +591,21 @@ public class GenTestCase {
             }
         } else {
             if (StringUtils.isNotEmpty(annotationValue)) {
-                doConvertValueType((Class) actualTypeArgumentKey, objectsKey, resListKey);
+                int size = sourceCodeMap.size();
+                for (Object objk : objectsKey) {
+                    localKeyIndex.add(size++);
+                }
+                doConvertValueType((Class) actualTypeArgumentKey, objectsKey, resListKey, sourceCodeMap, argIndex);
             } else {
+                localKeyIndex.add(sourceCodeMap.size());
                 Object[] newParams = new Object[1];
                 int newParamsIndex = 0;
-                doConvertNoValueType((Class) actualTypeArgumentKey, newParams, newParamsIndex);
+                doConvertNoValueType((Class) actualTypeArgumentKey, newParams, newParamsIndex, sourceCodeMap, argIndex);
                 resListKey.add(newParams[newParamsIndex]);
             }
         }
+
+        List<Integer> localValIndex = new LinkedList<>();
 
         if (actualTypeArgumentVal instanceof ParameterizedType) {
             Class<?> actualRawTypeInner = ((ParameterizedTypeImpl) actualTypeArgumentVal).getRawType();
@@ -499,14 +613,16 @@ public class GenTestCase {
 
             if (objectsVal != null && objectsVal.length >0) {
                 for (Object objVal : objectsVal) {
-                    Object o = parseParameterizedType(actualRawTypeInner, objVal.toString(), actualTypeArgsInnerArr, paramArgs, argIndex);
+                    localValIndex.add(sourceCodeMap.size());
+                    Object o = parseParameterizedType(actualRawTypeInner, objVal.toString(), actualTypeArgsInnerArr, paramArgs, argIndex, sourceCodeMap);
                     if (o != null){
                         argIndex.decrementAndGet();
                     }
                     resListVal.add(o);
                 }
             } else {
-                Object o = parseParameterizedType(actualRawTypeInner, "", actualTypeArgsInnerArr, paramArgs, argIndex);
+                localValIndex.add(sourceCodeMap.size());
+                Object o = parseParameterizedType(actualRawTypeInner, "", actualTypeArgsInnerArr, paramArgs, argIndex, sourceCodeMap);
                 if (o != null){
                     argIndex.decrementAndGet();
                 }
@@ -514,19 +630,29 @@ public class GenTestCase {
             }
         } else {
             if (StringUtils.isNotEmpty(annotationValue)) {
-                doConvertValueType((Class) actualTypeArgumentVal, objectsVal, resListVal);
+                int size = sourceCodeMap.size();
+                for (Object objk : objectsVal) {
+                    localValIndex.add(size++);
+                }
+                doConvertValueType((Class) actualTypeArgumentVal, objectsVal, resListVal, sourceCodeMap, argIndex);
             } else {
+                localValIndex.add(sourceCodeMap.size());
                 Object[] newParams = new Object[1];
                 int newParamsIndex = 0;
-                doConvertNoValueType((Class) actualTypeArgumentVal, newParams, newParamsIndex);
+                doConvertNoValueType((Class) actualTypeArgumentVal, newParams, newParamsIndex, sourceCodeMap, argIndex);
                 resListVal.add(newParams[newParamsIndex]);
             }
         }
 
         int keyLen = resListKey.size();
         Map map = new HashMap();
+
         for (int j = 0; j < keyLen; j++) {
             map.put(resListKey.get(j), resListVal.get(j));
+
+            StringBuilder currentSourceCode = new StringBuilder();
+            currentSourceCode.append("var").append(argIndex.get()).append(currentSourceSize).append(".put(").append("var").append(argIndex.get()).append(localKeyIndex.get(j)).append(",").append("var").append(argIndex.get()).append(localValIndex.get(j)).append(");");
+            sourceCodeMap.put(sourceCodeMap.size(), currentSourceCode);
         }
         paramArgs[argIndex.getAndIncrement()] = map;
         return map;
@@ -540,29 +666,44 @@ public class GenTestCase {
      * @param argIndex
      * @return
      */
-    public static List doConvertTypeList(String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex){
+    public static List doConvertTypeList(String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
         List<Object> resListVal = new LinkedList<>();
+
+        int currentSourceSize = sourceCodeMap.size();
+        conveterSimpleTypeSourceCode(sourceCodeMap, "List", "new LinkedList<>()", argIndex);
 
         Type actualTypeArgsInner = actualTypeArguments[0];
         if (actualTypeArgsInner instanceof ParameterizedType) {
             Class<?> actualRawTypeInner = ((ParameterizedTypeImpl) actualTypeArgsInner).getRawType();
             Type[] actualTypeArgsInnerArr = ((ParameterizedType) actualTypeArgsInner).getActualTypeArguments();
 
-            Object o = parseParameterizedType(actualRawTypeInner, annotationValue, actualTypeArgsInnerArr, paramArgs, argIndex);
+            Object o = parseParameterizedType(actualRawTypeInner, annotationValue, actualTypeArgsInnerArr, paramArgs, argIndex, sourceCodeMap);
             if (o != null){
                 argIndex.decrementAndGet();
             }
             resListVal.add(o);
+
+            StringBuilder currentSourceCode = new StringBuilder();
+            currentSourceCode.append("var").append(argIndex.get()).append(currentSourceSize).append(".add(var").append(argIndex.get()).append(currentSourceSize+1).append(");");
+            sourceCodeMap.put(sourceCodeMap.size(), currentSourceCode);
+
             paramArgs[argIndex.getAndIncrement()] = resListVal;
             return resListVal;
         } else {
             if (StringUtils.isNotEmpty(annotationValue)) {
-                doConvertListValueType((Class) actualTypeArgsInner, annotationValue, resListVal);
+                doConvertListValueType((Class) actualTypeArgsInner, annotationValue, resListVal, sourceCodeMap, argIndex);
             } else {
                 Object[] newParams = new Object[1];
                 int newParamsIndex = 0;
-                doConvertNoValueType((Class) actualTypeArgsInner, newParams, newParamsIndex);
+                doConvertNoValueType((Class) actualTypeArgsInner, newParams, newParamsIndex, sourceCodeMap, argIndex);
                 resListVal.add(newParams[newParamsIndex]);
+            }
+
+            int localVarIndex = currentSourceSize+1;
+            for (Object o: resListVal){
+                StringBuilder currentSourceCode = new StringBuilder();
+                currentSourceCode.append("var").append(argIndex.get()).append(currentSourceSize).append(".add(var").append(argIndex.get()).append(localVarIndex++).append(");");
+                sourceCodeMap.put(sourceCodeMap.size(), currentSourceCode);
             }
             paramArgs[argIndex.getAndIncrement()] = resListVal;
             return resListVal;
@@ -578,22 +719,22 @@ public class GenTestCase {
      * @param argIndex
      * @return
      */
-    public static Object parseParameterizedType(Class<?> rawType, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex){
+    public static Object parseParameterizedType(Class<?> rawType, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
         Object obj = null;
         if (rawType.isAssignableFrom(Map.class)){
-            obj = doConvertTypeMap(annotationValue, actualTypeArguments, paramArgs, argIndex);
+            obj = doConvertTypeMap(annotationValue, actualTypeArguments, paramArgs, argIndex, sourceCodeMap);
         } else if (rawType.isAssignableFrom(List.class)){
-            obj = doConvertTypeList(annotationValue, actualTypeArguments, paramArgs, argIndex);
+            obj = doConvertTypeList(annotationValue, actualTypeArguments, paramArgs, argIndex, sourceCodeMap);
         } else {
             List<Object> resListVal = new LinkedList<>();
 
             Boolean convertFlag;
             if (StringUtils.isNotEmpty(annotationValue)) {
-                convertFlag = converBeanType(rawType, actualTypeArguments, new Object[]{annotationValue}, resListVal);
+                convertFlag = converBeanType(rawType, actualTypeArguments, new Object[]{annotationValue}, resListVal, sourceCodeMap, argIndex);
             } else {
                 Object[] newParams = new Object[1];
                 int newI= 0;
-                convertFlag = adapterBeanType(rawType, actualTypeArguments, newParams, newI);
+                convertFlag = adapterBeanType(rawType, actualTypeArguments, newParams, newI, sourceCodeMap, argIndex);
                 if (convertFlag){
                     resListVal.add(newParams[newI]);
                 }
@@ -608,6 +749,16 @@ public class GenTestCase {
     }
 
 
+    private static void conveterSimpleTypeSourceCode(Map<Integer, StringBuilder> sourceCodeMap, String typeStr, Object v, AtomicInteger argIndex){
+        if (sourceCodeMap == null){
+            return;
+        }
+        StringBuilder currentSourceCode = new StringBuilder();
+        int currentSouceCodeIndex = sourceCodeMap.size();
+        currentSourceCode.append(typeStr).append(" var").append(argIndex.get()).append(currentSouceCodeIndex).append(" = ").append(v).append(";");
+        sourceCodeMap.put(currentSouceCodeIndex, currentSourceCode);
+    }
+
     /**
      *
      * @param genericTypeAssign
@@ -615,7 +766,7 @@ public class GenTestCase {
      * @param resList
      * @return
      */
-    private static Boolean conveterSimpleType(Class genericTypeAssign, Object[] objectDatas, List<Object> resList){
+    private static Boolean conveterSimpleType(Class genericTypeAssign, Object[] objectDatas, List<Object> resList, Map<Integer, StringBuilder> sourceCodeMap, List<Object> sourceCodeResultList, AtomicInteger argIndex){
         boolean flag = false;
         if (objectDatas == null || objectDatas.length == 0){
             return flag;
@@ -627,13 +778,24 @@ public class GenTestCase {
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
                 resList.add(v);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Object", "\""+v+"\"", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add("\"" + v + "\"");
+                }
             }
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Boolean.class)){
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Boolean.getBoolean(v));
+                boolean aBoolean = Boolean.getBoolean(v);
+                resList.add(aBoolean);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Boolean", aBoolean, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(aBoolean);
+                }
             }
 
             flag = true;
@@ -641,14 +803,26 @@ public class GenTestCase {
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Character.valueOf(v.toCharArray()[0]));
+                Character character = Character.valueOf(v.toCharArray()[0]);
+                resList.add(character);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Character", character, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(character);
+                }
             }
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Byte.class)){
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Byte.parseByte(v));
+                byte b = Byte.parseByte(v);
+                resList.add(b);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Byte", b, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(b);
+                }
             }
 
             flag = true;
@@ -656,7 +830,13 @@ public class GenTestCase {
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Short.parseShort(v));
+                short i = Short.parseShort(v);
+                resList.add(i);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Short", i, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(i);
+                }
             }
 
             flag = true;
@@ -664,7 +844,13 @@ public class GenTestCase {
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Integer.parseInt(v));
+                int i = Integer.parseInt(v);
+                resList.add(i);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Integer", i, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(i);
+                }
             }
 
             flag = true;
@@ -672,7 +858,13 @@ public class GenTestCase {
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Long.parseLong(v));
+                long l = Long.parseLong(v);
+                resList.add(l);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Long", l+"L", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(l + "L");
+                }
             }
 
             flag = true;
@@ -680,7 +872,13 @@ public class GenTestCase {
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Float.parseFloat(v));
+                float f = Float.parseFloat(v);
+                resList.add(f);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Float", f+"f", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(f + "f");
+                }
             }
 
             flag = true;
@@ -688,7 +886,13 @@ public class GenTestCase {
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                resList.add(Double.parseDouble(v));
+                double v1 = Double.parseDouble(v);
+                resList.add(v1);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "Double", v1+"d", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v1 + "d");
+                }
             }
 
             flag = true;
@@ -697,6 +901,11 @@ public class GenTestCase {
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
                 resList.add(v);
+
+                conveterSimpleTypeSourceCode(sourceCodeMap, "String", "\""+v+"\"", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add("\"" + v + "\"");
+                }
             }
 
             flag = true;
@@ -704,7 +913,7 @@ public class GenTestCase {
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                List<Object> objects = converPrimitive(genericTypeAssign, Arrays.asList(v));
+                List<Object> objects = converPrimitive(genericTypeAssign, Arrays.asList(v), sourceCodeMap, sourceCodeResultList, argIndex);
                 resList.add(objects.get(0));
             }
 
@@ -714,7 +923,13 @@ public class GenTestCase {
                 try {
                     String[] s = v.split("\\$");
                     v = s[RandomUtils.nextInt(0,s.length)];
-                    resList.add(DateUtils.parseDate(v, "yyyy-MM-dd HH:mm:ss"));
+                    Date date = DateUtils.parseDate(v, "yyyy-MM-dd HH:mm:ss");
+                    resList.add(date);
+
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "Date", "DateUtils.parseDate("+v+", \"yyyy-MM-dd HH:mm:ss\")", argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add("DateUtils.parseDate(" + v + ", \"yyyy-MM-dd HH:mm:ss\")");
+                    }
                 } catch (Exception e){
                     log.error("parseDate error, e=",e);
                 }
@@ -725,7 +940,13 @@ public class GenTestCase {
                 try {
                     String[] s = v.split("\\$");
                     v = s[RandomUtils.nextInt(0,s.length)];
-                    resList.add(LocalDateTime.parse(v, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    LocalDateTime parse = LocalDateTime.parse(v, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    resList.add(parse);
+
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "LocalDateTime", "LocalDateTime.parse("+v+", DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\"))", argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add("LocalDateTime.parse(" + v + ", DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\"))");
+                    }
                 } catch (Exception e){
                     log.error("parseDate error, e=",e);
                 }
@@ -742,27 +963,83 @@ public class GenTestCase {
      * @param srcList
      * @return
      */
-    private static List<Object> converPrimitive(Class genericTypeAssign, List<String> srcList){
+    private static List<Object> converPrimitive(Class genericTypeAssign, List<String> srcList, Map<Integer, StringBuilder> sourceCodeMap, List<Object> sourceCodeResultList, AtomicInteger argIndex){
         List<Object> destList = new LinkedList<>();
         if (CollectionUtils.isEmpty(srcList)){
             return destList;
         }
         if (genericTypeAssign.isAssignableFrom(int.class)){
-            destList.addAll(srcList.stream().map(x->Integer.parseInt(x)).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x->{
+                int v = Integer.parseInt(x);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "int", v, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v);
+                }
+                return v;
+            }).collect(Collectors.toList()));
         } else if (genericTypeAssign.isAssignableFrom(short.class)){
-            destList.addAll(srcList.stream().map(x->Short.parseShort(x)).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x->{
+                short v = Short.parseShort(x);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "short", v, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v);
+                }
+                return v;
+            }).collect(Collectors.toList()));
         } else if (genericTypeAssign.isAssignableFrom(float.class)){
-            destList.addAll(srcList.stream().map(x->Float.parseFloat(x)).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x->{
+                float v = Float.parseFloat(x);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "float", v+"f", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v+"f");
+                }
+                return v;
+            }).collect(Collectors.toList()));
         } else if (genericTypeAssign.isAssignableFrom(double.class)){
-            destList.addAll(srcList.stream().map(x->Double.parseDouble(x)).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x->{
+                double v = Double.parseDouble(x);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "double", v+"d", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v+"d");
+                }
+                return v;
+            }).collect(Collectors.toList()));
         } else if (genericTypeAssign.isAssignableFrom(long.class)){
-            destList.addAll(srcList.stream().map(x->Long.parseLong(x)).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x->{
+                long v = Long.parseLong(x);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "long", v+"L", argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v+"L");
+                }
+                return v;
+            }).collect(Collectors.toList()));
         } else if (genericTypeAssign.isAssignableFrom(boolean.class)){
-            destList.addAll(srcList.stream().map(x->Boolean.parseBoolean(x)).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x->{
+                boolean v = Boolean.parseBoolean(x);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "boolean", v, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v);
+                }
+                return v;
+            }).collect(Collectors.toList()));
         } else if (genericTypeAssign.isAssignableFrom(byte.class)){
-            destList.addAll(srcList.stream().map(x->Byte.parseByte(x)).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x->{
+                byte v = Byte.parseByte(x);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "byte", v, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v);
+                }
+                return v;
+            }).collect(Collectors.toList()));
         } else if (genericTypeAssign.isAssignableFrom(char.class)){
-            destList.addAll(srcList.stream().map(x-> x.toCharArray()[0]).collect(Collectors.toList()));
+            destList.addAll(srcList.stream().map(x-> {
+                char v = x.toCharArray()[0];
+                conveterSimpleTypeSourceCode(sourceCodeMap, "char", v, argIndex);
+                if (sourceCodeResultList != null) {
+                    sourceCodeResultList.add(v);
+                }
+                return v;
+            }).collect(Collectors.toList()));
         }
         return destList;
     }
@@ -775,8 +1052,9 @@ public class GenTestCase {
      * @param resList
      * @return
      */
-    private static Boolean converBeanType(Class genericTypeAssign, Type[] actualTypeArguments, Object[] objectsVal, List<Object> resList){
+    private static Boolean converBeanType(Class genericTypeAssign, Type[] actualTypeArguments, Object[] objectsVal, List<Object> resList, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
         boolean flag = false;
+        String clazzName = genericTypeAssign.getName();
 
         if (genericTypeAssign.isEnum()) {
             Object[] enumConstants = genericTypeAssign.getEnumConstants();
@@ -798,12 +1076,18 @@ public class GenTestCase {
                 }
             }
 
+            conveterSimpleTypeSourceCode(sourceCodeMap, clazzName, clazzName+"."+o, argIndex);
             resList.add(o);
             flag = true;
         } else {
             if (objectsVal == null || objectsVal.length == 0){
                 return flag;
             }
+
+            Integer localBeanIndex = sourceCodeMap.size();
+            StringBuilder sourceCode = new StringBuilder();
+            sourceCode.append(clazzName).append(" var").append(argIndex.get()).append(localBeanIndex).append(" = ").append("new").append(" ").append(clazzName).append("();");
+            sourceCodeMap.put(localBeanIndex, sourceCode);
 
             Map keyMap = JSONObject.parseObject(objectsVal[0].toString(), Map.class);
             List<Object> innerList = new LinkedList<>();
@@ -822,9 +1106,10 @@ public class GenTestCase {
                         continue;
                     }
                     field.setAccessible(true);
+                    String fieldName = field.getName();
 
-                    if (keyMap.containsKey(field.getName())){
-                        String s = keyMap.get(field.getName()).toString();
+                    if (keyMap.containsKey(fieldName)){
+                        String s = keyMap.get(fieldName).toString();
                         String[] arr = s.split("\\$");
                         s = arr[RandomUtils.nextInt(0,arr.length)];
 
@@ -842,7 +1127,12 @@ public class GenTestCase {
                             continue;
                         }
 
-                        Boolean convertSuss = conveterSimpleType(genericTypeClass, new Object[]{s}, innerList);
+                        StringBuilder resultBuilder = new StringBuilder();
+                        List<Object> sourceCodeResultList = new LinkedList<>();
+                        Boolean convertSuss = conveterSimpleType(genericTypeClass, new Object[]{s}, innerList, null, sourceCodeResultList, argIndex);
+                        resultBuilder.append(sourceCodeResultList.get(0));
+                        setBeanFieldVal(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
+
                         if (convertSuss) {
                             field.set(o, innerList.get(innerList.size()-1));
                         }
@@ -864,7 +1154,10 @@ public class GenTestCase {
                             continue;
                         }
 
-                        Boolean convertSuss = adapterSimpleType(genericTypeClass, newParams, newI);
+                        StringBuilder resultBuilder = new StringBuilder();
+                        Boolean convertSuss = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
+
+                        setBeanFieldVal(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
 
                         if (convertSuss){
                             field.set(o, newParams[0]);
@@ -882,6 +1175,13 @@ public class GenTestCase {
         return flag;
     }
 
+    private static void conveterSimpleResultSouceCode(StringBuilder resultBuilder, Object v){
+        if (resultBuilder == null){
+            return;
+        }
+        resultBuilder.append(v);
+    }
+
     /**
      *
      * @param genericTypeAssign
@@ -889,67 +1189,104 @@ public class GenTestCase {
      * @param i
      * @return
      */
-    private static Boolean adapterSimpleType(Class genericTypeAssign, Object[] paramArgs, int i){
+    private static Boolean adapterSimpleType(Class genericTypeAssign, Object[] paramArgs, int i, Map<Integer, StringBuilder> sourceCodeMap, StringBuilder resultBuilder, AtomicInteger argIndex){
         boolean flag = false;
         if (genericTypeAssign.isAssignableFrom(Boolean.class)){
             boolean b = RandomUtils.nextBoolean();
             paramArgs[i] = b;
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Boolean", b, argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, b);
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Character.class)){
             Character character = Character.valueOf((char) RandomUtils.nextInt(70, 120));
             paramArgs[i] = character;
 
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Character", character, argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, character);
+
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Byte.class)){
             int i1 = RandomUtils.nextInt(0, 2);
             paramArgs[i] = i1;
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Byte", i1, argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, i1);
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Short.class)){
             int i1 = RandomUtils.nextInt(0, 32767);
             paramArgs[i] = i1;
 
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Short", i1, argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, i1);
+
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Integer.class) ) {
             int i1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
             paramArgs[i] = i1;
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Integer", i1, argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, i1);
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Long.class)) {
             long i1 = RandomUtils.nextLong(0, Integer.MAX_VALUE);
             paramArgs[i] = i1;
 
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Long", i1+"L", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, i1+"L");
+
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Float.class)) {
             float i1 = RandomUtils.nextFloat(0, Integer.MAX_VALUE);
             paramArgs[i] = i1;
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Float", i1+"f", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, i1+"f");
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Double.class)) {
             Double i1 = RandomUtils.nextDouble(0, Integer.MAX_VALUE);
             paramArgs[i] = i1;
 
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Double", i1+"d", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, i1+"d");
+
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(String.class)){
             paramArgs[i] = "guyuefeng-test-string";
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "String", "\""+paramArgs[i]+"\"", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, "\""+paramArgs[i]+"\"");
 
             flag = true;
         } else if (genericTypeAssign.isPrimitive()){
             int i1 = RandomUtils.nextInt(0, 128);
             paramArgs[i] = i1;
-
+            converPrimitive(genericTypeAssign, Arrays.asList(i1+""), sourceCodeMap, null, argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, i1);
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Object.class)){
             paramArgs[i] = "guyuefeng-test-object";
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Object", "\""+paramArgs[i]+"\"", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, "\""+paramArgs[i]+"\"");
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Date.class)){
             paramArgs[i] = new Date();
 
+            conveterSimpleTypeSourceCode(sourceCodeMap, "Date", "new Date()", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, "new Date()");
+
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(LocalDateTime.class)){
             paramArgs[i] = LocalDateTime.now();
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "LocalDateTime", "LocalDateTime.now()", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, "LocalDateTime.now()");
 
             flag = true;
         }
@@ -965,8 +1302,9 @@ public class GenTestCase {
      * @param i
      * @return
      */
-    private static Boolean adapterBeanType(Class genericTypeAssign, Type[] actualTypeArguments, Object[] paramArgs, int i){
+    private static Boolean adapterBeanType(Class genericTypeAssign, Type[] actualTypeArguments, Object[] paramArgs, int i, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
         boolean flag = true;
+        String clazzName = genericTypeAssign.getName();
 
         if (genericTypeAssign.isEnum()) {
             Object[] enumConstants = genericTypeAssign.getEnumConstants();
@@ -980,11 +1318,18 @@ public class GenTestCase {
             }
             int constantIndex = RandomUtils.nextInt(0, length);
             paramArgs[i] = enumConstants[constantIndex];
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, clazzName, clazzName+"."+paramArgs[i], argIndex);
         } else {
             int actualTypeArgumentIndex = -1;
             if (actualTypeArguments != null && actualTypeArguments.length > 0){
                 actualTypeArgumentIndex = 0;
             }
+
+            Integer localBeanIndex = sourceCodeMap.size();
+            StringBuilder sourceCode = new StringBuilder();
+            sourceCode.append(clazzName).append(" var").append(argIndex.get()).append(localBeanIndex).append(" = ").append("new").append(" ").append(clazzName).append("();");
+            sourceCodeMap.put(localBeanIndex, sourceCode);
 
             try {
                 Object o = genericTypeAssign.newInstance();
@@ -1010,10 +1355,16 @@ public class GenTestCase {
                         continue;
                     }
 
+                    String fieldName = field.getName();
+
                     Object[] newParams = new Object[1];
                     int newI= 0;
 
-                    Boolean aBoolean = adapterSimpleType(genericTypeClass, newParams, newI);
+                    StringBuilder resultBuilder = new StringBuilder();
+                    Boolean aBoolean = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
+
+                    setBeanFieldVal(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
+
                     if (aBoolean){
                         field.set(o, newParams[0]);
                     }
@@ -1028,4 +1379,11 @@ public class GenTestCase {
     }
 
 
+    private static void setBeanFieldVal(String fieldName, Map<Integer, StringBuilder> sourceCodeMap, Integer localBeanIndex, StringBuilder resultBuilder, AtomicInteger argIndex){
+        String setName = fieldName.substring(0,1).toUpperCase().concat(fieldName.substring(1));
+        Integer propertyIndex = sourceCodeMap.size();
+        StringBuilder currentSourceCode = new StringBuilder();
+        currentSourceCode.append("var").append(argIndex.get()).append(localBeanIndex).append(".set").append(setName).append("(").append(resultBuilder.toString()).append(");");;
+        sourceCodeMap.put(propertyIndex, currentSourceCode);
+    }
 }
