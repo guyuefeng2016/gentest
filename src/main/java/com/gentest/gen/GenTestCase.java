@@ -432,14 +432,17 @@ public class GenTestCase {
 
                 Integer currentVarIndex = sourceCodeMap.size();
                 StringBuilder currentSourceCode = new StringBuilder();
-                currentSourceCode.append(componentName+"[] var").append(argIndex.get()).append(currentVarIndex).append(" = new "+componentName+"[").append(annotationValue.split(",").length).append("];");
+                int arrLen = 1;
+                if (StringUtils.isNotEmpty(annotationValue)){
+                    arrLen = annotationValue.split(",").length;
+                }
+                currentSourceCode.append(componentName+"[] var").append(argIndex.get()).append(currentVarIndex).append(" = new "+componentName+"[").append(arrLen).append("];");
                 sourceCodeMap.put(currentVarIndex, currentSourceCode);
 
                 if (StringUtils.isNotEmpty(annotationValue)){
                     List<Object> resListVal = new LinkedList<>();
                     doConvertListValueType(componentType, annotationValue, resListVal, sourceCodeMap, argIndex);
 
-                    int arrLen = resListVal.size();
                     Object arrObj = Array.newInstance(componentType, arrLen);
 
                     int localVarIndex = currentVarIndex+1;
@@ -1115,26 +1118,44 @@ public class GenTestCase {
 
                         Type genericType = field.getGenericType();
                         Class genericTypeClass = null;
+                        boolean fieldParameterizedTypeFlag = false;
                         try {
                             genericTypeClass = (Class) genericType;
                         } catch (Exception e){
-                            if (actualTypeArgumentIndex != -1){
+                            if (genericType instanceof ParameterizedType) {
+                                fieldParameterizedTypeFlag = true;
+                                Class<?> fieldRawType = ((ParameterizedTypeImpl) genericType).getRawType();
+                                Type[] fieldActualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+
+                                Integer currentVarIndex = sourceCodeMap.size();
+                                Object[] fieldParamArgs = new Object[1];
+                                AtomicInteger fieldArgIndex = new AtomicInteger(0);
+                                parseParameterizedType(fieldRawType, s, fieldActualTypeArguments, fieldParamArgs, fieldArgIndex, sourceCodeMap);
+
+                                field.set(o, fieldParamArgs[0]);
+
+                                StringBuilder resultBuilder = new StringBuilder();
+                                resultBuilder.append("var0").append(currentVarIndex);
+                                setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
+                            } else if (actualTypeArgumentIndex != -1){
                                 genericTypeClass = (Class) actualTypeArguments[actualTypeArgumentIndex++];
                             }
                         }
 
-                        if (genericTypeClass == null){
-                            continue;
-                        }
+                        if (!fieldParameterizedTypeFlag){
+                            if (genericTypeClass == null){
+                                continue;
+                            }
 
-                        StringBuilder resultBuilder = new StringBuilder();
-                        List<Object> sourceCodeResultList = new LinkedList<>();
-                        Boolean convertSuss = conveterSimpleType(genericTypeClass, new Object[]{s}, innerList, null, sourceCodeResultList, argIndex);
-                        resultBuilder.append(sourceCodeResultList.get(0));
-                        setBeanFieldVal(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
+                            StringBuilder resultBuilder = new StringBuilder();
+                            List<Object> sourceCodeResultList = new LinkedList<>();
+                            Boolean convertSuss = conveterSimpleType(genericTypeClass, new Object[]{s}, innerList, null, sourceCodeResultList, argIndex);
+                            resultBuilder.append(sourceCodeResultList.get(0));
+                            setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
 
-                        if (convertSuss) {
-                            field.set(o, innerList.get(innerList.size()-1));
+                            if (convertSuss) {
+                                field.set(o, innerList.get(innerList.size()-1));
+                            }
                         }
                     } else {
                         Object[] newParams = new Object[1];
@@ -1142,29 +1163,44 @@ public class GenTestCase {
 
                         Type genericType = field.getGenericType();
                         Class genericTypeClass = null;
+                        boolean fieldParameterizedTypeFlag = false;
                         try {
                             genericTypeClass = (Class) genericType;
                         } catch (Exception e){
-                            if (actualTypeArgumentIndex != -1){
+                            if (genericType instanceof ParameterizedType) {
+                                fieldParameterizedTypeFlag = true;
+                                Class<?> fieldRawType = ((ParameterizedTypeImpl) genericType).getRawType();
+                                Type[] fieldActualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+
+                                Integer currentVarIndex = sourceCodeMap.size();
+                                Object[] fieldParamArgs = new Object[1];
+                                AtomicInteger fieldArgIndex = new AtomicInteger(0);
+                                parseParameterizedType(fieldRawType, "", fieldActualTypeArguments, fieldParamArgs, fieldArgIndex, sourceCodeMap);
+
+                                field.set(o, fieldParamArgs[0]);
+
+                                StringBuilder resultBuilder = new StringBuilder();
+                                resultBuilder.append("var0").append(currentVarIndex);
+                                setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
+                            } else if (actualTypeArgumentIndex != -1){
                                 genericTypeClass = (Class) actualTypeArguments[actualTypeArgumentIndex++];
                             }
                         }
 
-                        if (genericTypeClass == null){
-                            continue;
-                        }
+                        if (!fieldParameterizedTypeFlag){
+                            if (genericTypeClass == null){
+                                continue;
+                            }
+                            StringBuilder resultBuilder = new StringBuilder();
+                            Boolean convertSuss = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
+                            setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
 
-                        StringBuilder resultBuilder = new StringBuilder();
-                        Boolean convertSuss = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
-
-                        setBeanFieldVal(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
-
-                        if (convertSuss){
-                            field.set(o, newParams[0]);
+                            if (convertSuss){
+                                field.set(o, newParams[0]);
+                            }
                         }
                     }
                 }
-
                 resList.add(o);
                 flag = true;
             } catch (Exception e) {
@@ -1340,36 +1376,49 @@ public class GenTestCase {
                     }
                     field.setAccessible(true);
 
+                    String fieldName = field.getName();
                     Type genericType = field.getGenericType();
-
                     Class genericTypeClass = null;
+                    boolean fieldParameterizedTypeFlag = false;
                     try {
                         genericTypeClass = (Class) genericType;
                     } catch (Exception e){
-                        if (actualTypeArgumentIndex != -1){
+                        if (genericType instanceof ParameterizedType) {
+                            fieldParameterizedTypeFlag = true;
+                            Class<?> fieldRawType = ((ParameterizedTypeImpl) genericType).getRawType();
+                            Type[] fieldActualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+
+                            Integer currentVarIndex = sourceCodeMap.size();
+                            Object[] fieldParamArgs = new Object[1];
+                            AtomicInteger fieldArgIndex = new AtomicInteger(0);
+                            parseParameterizedType(fieldRawType, "", fieldActualTypeArguments, fieldParamArgs, fieldArgIndex, sourceCodeMap);
+
+                            field.set(o, fieldParamArgs[0]);
+
+                            StringBuilder resultBuilder = new StringBuilder();
+                            resultBuilder.append("var0").append(currentVarIndex);
+                            setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
+                        } else if (actualTypeArgumentIndex != -1){
                             genericTypeClass = (Class) actualTypeArguments[actualTypeArgumentIndex++];
                         }
                     }
 
-                    if (genericTypeClass == null){
-                        continue;
-                    }
+                    if (!fieldParameterizedTypeFlag){
+                        if (genericTypeClass == null){
+                            continue;
+                        }
 
-                    String fieldName = field.getName();
+                        Object[] newParams = new Object[1];
+                        int newI= 0;
+                        StringBuilder resultBuilder = new StringBuilder();
+                        Boolean aBoolean = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
+                        setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
 
-                    Object[] newParams = new Object[1];
-                    int newI= 0;
-
-                    StringBuilder resultBuilder = new StringBuilder();
-                    Boolean aBoolean = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
-
-                    setBeanFieldVal(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
-
-                    if (aBoolean){
-                        field.set(o, newParams[0]);
+                        if (aBoolean){
+                            field.set(o, newParams[0]);
+                        }
                     }
                 }
-
                 paramArgs[i] = o;
             } catch (Exception e){
                 flag = false;
@@ -1379,7 +1428,7 @@ public class GenTestCase {
     }
 
 
-    private static void setBeanFieldVal(String fieldName, Map<Integer, StringBuilder> sourceCodeMap, Integer localBeanIndex, StringBuilder resultBuilder, AtomicInteger argIndex){
+    private static void setBeanFiledSourceCode(String fieldName, Map<Integer, StringBuilder> sourceCodeMap, Integer localBeanIndex, StringBuilder resultBuilder, AtomicInteger argIndex){
         String setName = fieldName.substring(0,1).toUpperCase().concat(fieldName.substring(1));
         Integer propertyIndex = sourceCodeMap.size();
         StringBuilder currentSourceCode = new StringBuilder();
