@@ -54,6 +54,8 @@ public class GenTestCase extends AbstractGenTestCase{
      *                         {"com.safeheron.gateway.repository.AommonRepository2:test8#test9", "com.safeheron.gateway.repository.MpcTaskManagerRepository:descreseTimeOutCreatePartyTaskCount#getMpcTaskSessionIdIp"}
      * @param inputLogInfo 是否输出info日志
      * @param inputLogPerformance 是否输出性能日志
+     * @param generateCase 是否输出测试用例
+     * @param caseInput 指定测试用例的信息【 测试用例所在包名，测试用例输出目录，作者，注释】
      */
     public static void test(String testPackage, Class applicationClass, String[] args, String[] onlyClassNameArr, Boolean inputLogInfo, Boolean inputLogPerformance, Boolean generateCase, CaseInput caseInput) {
         try {
