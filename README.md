@@ -2,6 +2,7 @@
 自动化测试
 使用步骤：
 
+![image]https://github.com/guyuefeng2016/gentest/blob/main/projectImg/testcase.gif
 (1) 下载gentest，然后mvn install 安装
 
 (2) 引入当前依赖
@@ -50,4 +51,4 @@
         ...... 
     }
 
-  
+ 如果你也对技术感兴趣，请加交流qq群：852278138
