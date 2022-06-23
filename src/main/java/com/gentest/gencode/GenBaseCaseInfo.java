@@ -2,24 +2,18 @@ package com.gentest.gencode;
 
 import lombok.Data;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * @description:
  * @author: guyuefeng
  * @create: 2022-06-21 11:00
  **/
 @Data
-public class GenCaseInfo {
+public class GenBaseCaseInfo {
 
     private String testPackage;
-    private String repositoryPackage;
-    private String repositoryName;
     private String author;
     private String comment;
     private String baseTestClass;
 
-    private List<SouceCodeInfo> methodList = new LinkedList<>();
 
 }

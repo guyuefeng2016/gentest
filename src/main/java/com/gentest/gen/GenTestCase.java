@@ -42,13 +42,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GenTestCase extends AbstractGenTestCase{
 
-//    public static void main(String[] args) {
-//        String testPackage = "com/safeheron/gateway/repository";
-//
-//        test(testPackage, WebApplication.class, args, new String[]{"com.safeheron.gateway.repository.AommonRepository2:test8#test9",
-//                "com.safeheron.gateway.repository.MpcTaskManagerRepository:descreseTimeOutCreatePartyTaskCount#getMpcTaskSessionIdIp" },null, null);
-//    }
-
 
     /**
      * 全局控制字段,用户输入优先级高于配置优先级
@@ -209,7 +202,7 @@ public class GenTestCase extends AbstractGenTestCase{
                     continue;
                 }
             }
-            generateTestCase(generateCase, testCaseInfoList, caseInput);
+            generateTestCase(generateCase, testCaseInfoList, caseInput, applicationClass);
             printTestCase();
         } catch (Exception e){
             log.error("e=",e);

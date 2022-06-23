@@ -1,7 +1,6 @@
 <#if testPackage?? && testPackage != "">
 package ${testPackage};
 
-import ${testPackage}.BaseTest;
 </#if>
 <#if repositoryPackage?? && repositoryPackage != "">
 import ${repositoryPackage};
@@ -18,7 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 * <b>日期：</b>${.now?string("yyyy")}<br>
 */
 @Slf4j
-public class ${repositoryName}Test extends BaseTest{
+public class ${repositoryName}Test extends GenBaseTest{
 
     @Autowired
     private ${repositoryName?cap_first} ${repositoryName?uncap_first};

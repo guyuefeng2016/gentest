@@ -23,4 +23,5 @@ public class CaseInput {
 
     @ApiModelProperty(value = "注释")
     private String comment;
+
 }

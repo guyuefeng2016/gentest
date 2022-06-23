@@ -75,10 +75,10 @@ public class AbstractGenTestCase {
      * @param testCaseInfoList
      * @param caseInput
      */
-    protected static void generateTestCase(Boolean generateCase, List<TestCaseClassInfo> testCaseInfoList, CaseInput caseInput){
+    protected static void generateTestCase(Boolean generateCase, List<TestCaseClassInfo> testCaseInfoList, CaseInput caseInput, Class applicationClass){
         if (generateCase != null && generateCase){
             GenerateFileService generateFileService = GenSpringContextHolder.getBean(GenerateFileService.class);
-            generateFileService.genTestCase(testCaseInfoList, caseInput);
+            generateFileService.genTestCase(testCaseInfoList, caseInput, applicationClass);
         }
     }
 
