@@ -11,7 +11,6 @@ import lombok.Data;
 @Data
 public class CaseInput {
 
-
     @ApiModelProperty(value = "测试用例所在包名")
     private String testCasePackage;
 
