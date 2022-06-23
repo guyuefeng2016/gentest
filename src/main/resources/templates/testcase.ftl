@@ -38,7 +38,7 @@ public class ${repositoryName}Test extends BaseTest{
         log.info("result${souceCode.methodName?cap_first} : {}", result${souceCode.methodName?cap_first});
         <#if souceCode.returnObj??>
         /**
-        *  当前默认值执行之后的结果为：${souceCode.returnObj}
+        *  当前给定参数执行结果为：${souceCode.returnObj}
         */
         </#if>
         </#if>

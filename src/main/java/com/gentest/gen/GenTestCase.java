@@ -7,7 +7,6 @@ import com.gentest.common.GenSpringContextHolder;
 import com.gentest.enums.GenCtx;
 import com.gentest.exception.TypeNotSupportException;
 import com.gentest.gencode.CaseInput;
-import com.gentest.gencode.GenerateFileService;
 import com.gentest.gencode.TestCaseClassInfo;
 import com.gentest.gencode.TestCaseMethodInfo;
 import com.gentest.report.GenReport;
@@ -41,21 +40,7 @@ import java.util.stream.Collectors;
  * @create: 2022-06-14 11:17
  **/
 @Slf4j
-public class GenTestCase {
-
-    public static void main(String[] args) throws Exception{
-        Class<?> aClass = Class.forName("com.gentest.gen.GenTestCase");
-        Method convertType = aClass.getDeclaredMethod("convertType", Type.class, Object[].class, AtomicInteger.class, Map.class);
-        Class<?> returnType = convertType.getReturnType();
-        System.out.println(returnType);
-        System.out.println(convertType.getGenericReturnType().getTypeName().equals("void"));
-
-        System.out.println("-------");
-        Method doInvoke = aClass.getDeclaredMethod("conveterSimpleResultSouceCode", StringBuilder.class, Object.class);
-        Class<?> returnType1 = doInvoke.getReturnType();
-        System.out.println(returnType1);
-        System.out.println(doInvoke.getGenericReturnType().getTypeName().equals("void"));
-    }
+public class GenTestCase extends AbstractGenTestCase{
 
 //    public static void main(String[] args) {
 //        String testPackage = "com/safeheron/gateway/repository";
@@ -251,7 +236,6 @@ public class GenTestCase {
             if (enableThread) {
                 pool = Executors.newFixedThreadPool(threadCount);
             }
-
             AtomicReference<Object> resultRef = new AtomicReference<>();
             AtomicReference<Exception> threadExceptionRef = new AtomicReference<>();
             long startTime = System.currentTimeMillis();
@@ -286,12 +270,10 @@ public class GenTestCase {
             if (enableThread){
                 pool.shutdown();
             }
-
             Boolean logPerformance = genCtxVo.getLogPerformance();
             if (inputLogPerformance != null){
                 logPerformance = inputLogPerformance;
             }
-
             if (logPerformance){
                 StringBuffer sb = GenReport.addPerformanceReport("methodName: ").append(methodName).append(", 执行次数：").append(executeCount).append(" 次");
                 if (enableThread){
@@ -682,23 +664,6 @@ public class GenTestCase {
 
     /**
      *
-     * @param sourceCodeMap
-     * @param typeStr
-     * @param v
-     * @param argIndex
-     */
-    private static void conveterSimpleTypeSourceCode(Map<Integer, StringBuilder> sourceCodeMap, String typeStr, Object v, AtomicInteger argIndex){
-        if (sourceCodeMap == null){
-            return;
-        }
-        StringBuilder currentSourceCode = new StringBuilder();
-        int currentSouceCodeIndex = sourceCodeMap.size();
-        currentSourceCode.append(typeStr).append(" var").append(argIndex.get()).append(currentSouceCodeIndex).append(" = ").append(v).append(";");
-        sourceCodeMap.put(currentSouceCodeIndex, currentSourceCode);
-    }
-
-    /**
-     *
      * @param genericTypeAssign
      * @param objectDatas
      * @param resList
@@ -1058,34 +1023,10 @@ public class GenTestCase {
                         String s = keyMap.get(fieldName).toString();
                         String[] arr = s.split("\\$");
                         s = arr[RandomUtils.nextInt(0,arr.length)];
+                        AtomicBoolean fieldParameterizedTypeFlag = new AtomicBoolean(false);
+                        Class genericTypeClass = adapterBeanFieldParameterizedType(s, field, fieldParameterizedTypeFlag, sourceCodeMap, o, localBeanIndex, argIndex, actualTypeArguments, actualTypeArgumentIndex);
 
-                        Type genericType = field.getGenericType();
-                        Class genericTypeClass = null;
-                        boolean fieldParameterizedTypeFlag = false;
-                        try {
-                            genericTypeClass = (Class) genericType;
-                        } catch (Exception e){
-                            if (genericType instanceof ParameterizedType) {
-                                fieldParameterizedTypeFlag = true;
-                                Class<?> fieldRawType = ((ParameterizedTypeImpl) genericType).getRawType();
-                                Type[] fieldActualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
-
-                                Integer currentVarIndex = sourceCodeMap.size();
-                                Object[] fieldParamArgs = new Object[1];
-                                AtomicInteger fieldArgIndex = new AtomicInteger(0);
-                                parseParameterizedType(genericType.getTypeName(), fieldRawType, s, fieldActualTypeArguments, fieldParamArgs, fieldArgIndex, sourceCodeMap);
-
-                                field.set(o, fieldParamArgs[0]);
-
-                                StringBuilder resultBuilder = new StringBuilder();
-                                resultBuilder.append("var0").append(currentVarIndex);
-                                setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
-                            } else if (actualTypeArgumentIndex != -1){
-                                genericTypeClass = (Class) actualTypeArguments[actualTypeArgumentIndex++];
-                            }
-                        }
-
-                        if (!fieldParameterizedTypeFlag){
+                        if (!fieldParameterizedTypeFlag.get()){
                             if (genericTypeClass == null){
                                 continue;
                             }
@@ -1100,39 +1041,15 @@ public class GenTestCase {
                             }
                         }
                     } else {
-                        Object[] newParams = new Object[1];
-                        int newI= 0;
+                        AtomicBoolean fieldParameterizedTypeFlag = new AtomicBoolean(false);
+                        Class genericTypeClass = adapterBeanFieldParameterizedType("", field, fieldParameterizedTypeFlag, sourceCodeMap, o, localBeanIndex, argIndex, actualTypeArguments, actualTypeArgumentIndex);
 
-                        Type genericType = field.getGenericType();
-                        Class genericTypeClass = null;
-                        boolean fieldParameterizedTypeFlag = false;
-                        try {
-                            genericTypeClass = (Class) genericType;
-                        } catch (Exception e){
-                            if (genericType instanceof ParameterizedType) {
-                                fieldParameterizedTypeFlag = true;
-                                Class<?> fieldRawType = ((ParameterizedTypeImpl) genericType).getRawType();
-                                Type[] fieldActualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
-
-                                Integer currentVarIndex = sourceCodeMap.size();
-                                Object[] fieldParamArgs = new Object[1];
-                                AtomicInteger fieldArgIndex = new AtomicInteger(0);
-                                parseParameterizedType(genericType.getTypeName(), fieldRawType, "", fieldActualTypeArguments, fieldParamArgs, fieldArgIndex, sourceCodeMap);
-
-                                field.set(o, fieldParamArgs[0]);
-
-                                StringBuilder resultBuilder = new StringBuilder();
-                                resultBuilder.append("var0").append(currentVarIndex);
-                                setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
-                            } else if (actualTypeArgumentIndex != -1){
-                                genericTypeClass = (Class) actualTypeArguments[actualTypeArgumentIndex++];
-                            }
-                        }
-
-                        if (!fieldParameterizedTypeFlag){
+                        if (!fieldParameterizedTypeFlag.get()){
                             if (genericTypeClass == null){
                                 continue;
                             }
+                            Object[] newParams = new Object[1];
+                            int newI= 0;
                             StringBuilder resultBuilder = new StringBuilder();
                             Boolean convertSuss = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
                             setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
@@ -1155,15 +1072,47 @@ public class GenTestCase {
 
     /**
      *
-     * @param resultBuilder
-     * @param v
+     * @param fieldValue
+     * @param field
+     * @param fieldParameterizedTypeFlag
+     * @param sourceCodeMap
+     * @param o
+     * @param localBeanIndex
+     * @param argIndex
+     * @param actualTypeArguments
+     * @param actualTypeArgumentIndex
+     * @return
+     * @throws IllegalAccessException
      */
-    private static void conveterSimpleResultSouceCode(StringBuilder resultBuilder, Object v){
-        if (resultBuilder == null){
-            return;
+    private static Class adapterBeanFieldParameterizedType(String fieldValue , Field field, AtomicBoolean fieldParameterizedTypeFlag, Map<Integer, StringBuilder> sourceCodeMap, Object o, Integer localBeanIndex, AtomicInteger argIndex, Type[] actualTypeArguments, int actualTypeArgumentIndex) throws IllegalAccessException {
+        Class genericTypeClass = null;
+        Type genericType = field.getGenericType();
+        try {
+            genericTypeClass = (Class) genericType;
+        } catch (Exception e){
+            if (genericType instanceof ParameterizedType) {
+                fieldParameterizedTypeFlag.set(true);
+                Class<?> fieldRawType = ((ParameterizedTypeImpl) genericType).getRawType();
+                Type[] fieldActualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+
+                Integer currentVarIndex = sourceCodeMap.size();
+                Object[] fieldParamArgs = new Object[1];
+                AtomicInteger fieldArgIndex = new AtomicInteger(0);
+                parseParameterizedType(genericType.getTypeName(), fieldRawType, fieldValue, fieldActualTypeArguments, fieldParamArgs, fieldArgIndex, sourceCodeMap);
+
+                field.set(o, fieldParamArgs[0]);
+
+                StringBuilder resultBuilder = new StringBuilder();
+                resultBuilder.append("var0").append(currentVarIndex);
+                setBeanFiledSourceCode(field.getName(), sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
+            } else if (actualTypeArgumentIndex != -1){
+                fieldParameterizedTypeFlag.set(false);
+                genericTypeClass = (Class) actualTypeArguments[actualTypeArgumentIndex++];
+            }
         }
-        resultBuilder.append(v);
+        return genericTypeClass;
     }
+
 
     /**
      *
@@ -1334,33 +1283,10 @@ public class GenTestCase {
                     field.setAccessible(true);
 
                     String fieldName = field.getName();
-                    Type genericType = field.getGenericType();
-                    Class genericTypeClass = null;
-                    boolean fieldParameterizedTypeFlag = false;
-                    try {
-                        genericTypeClass = (Class) genericType;
-                    } catch (Exception e){
-                        if (genericType instanceof ParameterizedType) {
-                            fieldParameterizedTypeFlag = true;
-                            Class<?> fieldRawType = ((ParameterizedTypeImpl) genericType).getRawType();
-                            Type[] fieldActualTypeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+                    AtomicBoolean fieldParameterizedTypeFlag = new AtomicBoolean(false);
+                    Class genericTypeClass = adapterBeanFieldParameterizedType("", field, fieldParameterizedTypeFlag, sourceCodeMap, o, localBeanIndex, argIndex, actualTypeArguments, actualTypeArgumentIndex);
 
-                            Integer currentVarIndex = sourceCodeMap.size();
-                            Object[] fieldParamArgs = new Object[1];
-                            AtomicInteger fieldArgIndex = new AtomicInteger(0);
-                            parseParameterizedType(genericType.getTypeName(), fieldRawType, "", fieldActualTypeArguments, fieldParamArgs, fieldArgIndex, sourceCodeMap);
-
-                            field.set(o, fieldParamArgs[0]);
-
-                            StringBuilder resultBuilder = new StringBuilder();
-                            resultBuilder.append("var0").append(currentVarIndex);
-                            setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
-                        } else if (actualTypeArgumentIndex != -1){
-                            genericTypeClass = (Class) actualTypeArguments[actualTypeArgumentIndex++];
-                        }
-                    }
-
-                    if (!fieldParameterizedTypeFlag){
+                    if (!fieldParameterizedTypeFlag.get()){
                         if (genericTypeClass == null){
                             continue;
                         }
@@ -1384,77 +1310,4 @@ public class GenTestCase {
         return flag;
     }
 
-
-    /**
-     *
-     * @param fieldName
-     * @param sourceCodeMap
-     * @param localBeanIndex
-     * @param resultBuilder
-     * @param argIndex
-     */
-    private static void setBeanFiledSourceCode(String fieldName, Map<Integer, StringBuilder> sourceCodeMap, Integer localBeanIndex, StringBuilder resultBuilder, AtomicInteger argIndex){
-        String setName = fieldName.substring(0,1).toUpperCase().concat(fieldName.substring(1));
-        Integer propertyIndex = sourceCodeMap.size();
-        StringBuilder currentSourceCode = new StringBuilder();
-        currentSourceCode.append("var").append(argIndex.get()).append(localBeanIndex).append(".set").append(setName).append("(").append(resultBuilder.toString()).append(");");;
-        sourceCodeMap.put(propertyIndex, currentSourceCode);
-    }
-
-
-    /**
-     * 生成测试用例
-     * @param generateCase
-     * @param testCaseInfoList
-     * @param caseInput
-     */
-    private static void generateTestCase(Boolean generateCase, List<TestCaseClassInfo> testCaseInfoList, CaseInput caseInput){
-        if (generateCase != null && generateCase){
-            GenerateFileService generateFileService = GenSpringContextHolder.getBean(GenerateFileService.class);
-            generateFileService.genTestCase(testCaseInfoList, caseInput);
-        }
-    }
-
-    /**
-     * 打印测试用例
-     */
-    private static void printTestCase(){
-        Queue<String> queue = GenReport.printReport(false);
-        if (!CollectionUtils.isEmpty(queue)) {
-            boolean dingPush = false;
-            //GenDingPush dingDingPush = null;
-            if (dingPush){
-                //dingDingPush = GenSpringContextHolder.getBean(GenDingPush.class);
-            }
-            StringBuilder dingSb = new StringBuilder();
-
-            while (queue.size() > 0) {
-                dingSb.append(queue.poll());
-            }
-            while (dingSb.length() > 0) {
-                if (dingSb.length() > 4000) {
-                    String dingText = dingSb.substring(0, 4000);
-                    if (dingPush) {
-                        //dingDingPush.sendPush(dingText);
-                    } else {
-                        System.out.println(dingText);
-                    }
-                    dingSb.delete(0, 4000);
-                } else {
-                    if (dingPush) {
-                        //dingDingPush.sendPush(dingSb.toString());
-                    } else {
-                        System.out.println(dingSb.toString());
-                    }
-                    dingSb.delete(0, dingSb.length());
-                }
-                try {
-                    if (dingPush){
-                        Thread.sleep(5000);
-                    }
-                } catch (Exception e) {
-                }
-            }
-        }
-    }
 }

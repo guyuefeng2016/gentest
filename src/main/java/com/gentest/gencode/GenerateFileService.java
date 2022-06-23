@@ -78,10 +78,15 @@ public class GenerateFileService {
                 testCaseMethodInfos.forEach(caseMethodInfo -> {
                     SouceCodeInfo souceCodeInfo = new SouceCodeInfo();
                     souceCodeInfo.setReturnType(caseMethodInfo.getReturnType());
-                    souceCodeInfo.setReturnObj(caseMethodInfo.getReturnObj());
                     souceCodeInfo.setArgSize(caseMethodInfo.getMethodArgCount());
                     souceCodeInfo.setMethodName(caseMethodInfo.getTestCaseMethodName());
 
+                    Object returnObj = caseMethodInfo.getReturnObj();
+                    if (returnObj != null){
+                        souceCodeInfo.setReturnObj(returnObj == "" ? null : returnObj.toString());
+                    } else {
+                        souceCodeInfo.setReturnObj(returnObj);
+                    }
                     Map<Integer, StringBuilder> methodSourceCode = caseMethodInfo.getMethodSourceCode();
                     Map<String, String> resMethodSouceCodeMap = new LinkedHashMap<>();
                     for (Map.Entry<Integer,StringBuilder> entry: methodSourceCode.entrySet()){
