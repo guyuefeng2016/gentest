@@ -2,8 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4bbd49d8-2315-462f-ae1a-c63e2b9bd25a" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/TestCaseMethodInfo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/GenCaseInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/GenCaseInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/GenerateFileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/GenerateFileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/SouceCodeInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/SouceCodeInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/TestCaseInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gencode/TestCaseClassInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/templates/testcase.ftl" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/templates/testcase.ftl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/Test1.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/Test1.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -95,7 +102,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.GenerateFileService">
+  <component name="RunManager" selected="JUnit.Test1.test2">
     <configuration name="Applications" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.gentest.Applications" />
       <module name="gentest" />
@@ -157,9 +164,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.Test1.test2" />
         <item itemvalue="Application.GenerateFileService" />
         <item itemvalue="Application.GenTestCase" />
-        <item itemvalue="JUnit.Test1.test2" />
         <item itemvalue="Application.Applications" />
         <item itemvalue="JUnit.Test1.test1" />
       </list>
@@ -181,7 +188,7 @@
       <workItem from="1655692381678" duration="19769000" />
       <workItem from="1655738418457" duration="12045000" />
       <workItem from="1655789889231" duration="21347000" />
-      <workItem from="1655822114938" duration="38956000" />
+      <workItem from="1655822114938" duration="46106000" />
     </task>
     <servers />
   </component>
@@ -217,7 +224,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java</url>
-          <line>48</line>
+          <line>49</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>

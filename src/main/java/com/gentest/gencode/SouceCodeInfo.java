@@ -2,8 +2,6 @@ package com.gentest.gencode;
 
 import lombok.Data;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,6 +15,7 @@ public class SouceCodeInfo {
     private Object returnObj;
     private String returnType;
     private Integer argSize;
+    private String methodName;
     private Map<String, String> mapSouceCode;
 
 }

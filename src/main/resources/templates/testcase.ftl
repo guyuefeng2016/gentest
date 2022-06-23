@@ -23,27 +23,27 @@ public class ${repositoryName}Test extends BaseTest{
     @Autowired
     private ${repositoryName?cap_first} ${repositoryName?uncap_first};
 
-<#list methodList as methodMap>
+<#list methodList as souceCode>
 
-    <#list methodMap?keys as methodName>
+ <#if souceCode.methodName??>
     @Test
-    public void ${methodName}Test${methodMap_index}() throws Exception {
-        <#list methodMap[methodName].mapSouceCode?keys as key>
-        ${methodMap[methodName].mapSouceCode[key]}
+    public void ${souceCode.methodName}Test${souceCode_index}() throws Exception {
+        <#list souceCode.mapSouceCode?keys as key>
+        ${souceCode.mapSouceCode[key]}
         </#list>
-        <#if methodMap[methodName].returnType == "void">
-        ${repositoryName?uncap_first}.${methodName}(<#if methodMap[methodName].argSize gt 0><#list 0..methodMap[methodName].argSize-1 as i><#if i_has_next>var${i}0,<#else >var${i}0</#if></#list></#if>);
+        <#if souceCode.returnType! == "void">
+        ${repositoryName?uncap_first}.${souceCode.methodName}(<#if souceCode.argSize gt 0><#list 0..souceCode.argSize-1 as i><#if i_has_next>var${i}0,<#else >var${i}0</#if></#list></#if>);
         <#else >
-        ${methodMap[methodName].returnType} result${methodName?cap_first} = ${repositoryName?uncap_first}.${methodName}(<#if methodMap[methodName].argSize gt 0><#list 0..methodMap[methodName].argSize-1 as i><#if i_has_next>var${i}0,<#else >var${i}0</#if></#list></#if>);
-        log.info("result${methodName?cap_first} : {}", result${methodName?cap_first});
-        <#if methodMap[methodName].returnObj??>
+        ${souceCode.returnType!} result${souceCode.methodName?cap_first} = ${repositoryName?uncap_first}.${souceCode.methodName}(<#if souceCode.argSize gt 0><#list 0..souceCode.argSize-1 as i><#if i_has_next>var${i}0,<#else >var${i}0</#if></#list></#if>);
+        log.info("result${souceCode.methodName?cap_first} : {}", result${souceCode.methodName?cap_first});
+        <#if souceCode.returnObj??>
         /**
-        *  当前默认值执行之后的结果为：${methodMap[methodName].returnObj}
+        *  当前默认值执行之后的结果为：${souceCode.returnObj}
         */
         </#if>
         </#if>
     }
-    </#list>
+</#if>
 </#list>
 
 }

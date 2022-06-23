@@ -4,7 +4,6 @@ import lombok.Data;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @description:
@@ -20,6 +19,6 @@ public class GenCaseInfo {
     private String author;
     private String comment;
 
-    private List<Map<String,SouceCodeInfo>> methodList = new LinkedList<>();
+    private List<SouceCodeInfo> methodList = new LinkedList<>();
 
 }
