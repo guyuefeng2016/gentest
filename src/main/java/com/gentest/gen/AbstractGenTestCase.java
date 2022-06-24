@@ -6,6 +6,9 @@ import com.gentest.gencode.GenerateFileService;
 import com.gentest.gencode.TestCaseClassInfo;
 import com.gentest.report.GenReport;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.ExitCodeGenerator;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
@@ -123,5 +126,14 @@ public class AbstractGenTestCase {
                 }
             }
         }
+    }
+
+    /**
+     *
+     * @param configurableApplicationContext
+     */
+    protected static void exit(ConfigurableApplicationContext configurableApplicationContext){
+        int exitCode = SpringApplication.exit(configurableApplicationContext, (ExitCodeGenerator) () -> 0);
+        System.exit(exitCode);
     }
 }

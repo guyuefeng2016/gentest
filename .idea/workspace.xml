@@ -3,6 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="4bbd49d8-2315-462f-ae1a-c63e2b9bd25a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/common/GenDingPush.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gen/AbstractGenTestCase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gen/AbstractGenTestCase.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -94,7 +99,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.GenTestCase">
+  <component name="RunManager" selected="Application.Applications">
     <configuration name="Applications" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.gentest.Applications" />
       <module name="gentest" />
@@ -156,10 +161,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.Applications" />
         <item itemvalue="Application.GenTestCase" />
         <item itemvalue="JUnit.Test1.test2" />
         <item itemvalue="Application.GenerateFileService" />
-        <item itemvalue="Application.Applications" />
         <item itemvalue="JUnit.Test1.test1" />
       </list>
     </recent_temporary>
@@ -180,7 +185,7 @@
       <workItem from="1655692381678" duration="19769000" />
       <workItem from="1655738418457" duration="12045000" />
       <workItem from="1655789889231" duration="21347000" />
-      <workItem from="1655822114938" duration="68581000" />
+      <workItem from="1655822114938" duration="72086000" />
     </task>
     <servers />
   </component>

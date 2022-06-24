@@ -1,5 +1,10 @@
 # gentest
 自动化测试
+
+小插曲（背景）
+   最近写完公司项目，测试人员也已经测试完毕，之前只是在代码里面写了几个测试用例，验证一下功能的正确性，没想到最近，同事让我补全其他所有的测试用例...一怒之下😠😄😭，
+决定写一个自动生成测试用例的代码。后来感觉不过瘾，又增加了黑盒测试，性能测试，全部由代码自动完成。
+
 使用步骤：
 
 (1) 下载gentest，然后mvn install 安装
@@ -9,7 +14,7 @@
      <dependency>
        <groupId>io.github.guyuefeng2016</groupId>
        <artifactId>gen-test</artifactId>
-       <version>0.0.2</version>
+       <version>0.0.3</version>
      </dependency>
 
 (3) 在springboot的启动类上面加上对gentest的扫描 @SpringBootApplication(scanBasePackages = {"com.gentest"})

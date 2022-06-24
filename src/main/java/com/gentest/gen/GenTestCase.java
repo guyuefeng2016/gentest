@@ -15,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
@@ -97,7 +99,7 @@ public class GenTestCase extends AbstractGenTestCase{
                 clazzIterator = onlyClassNameList.keySet().iterator();
             }
             ClassLoader loader = ClassLoader.getSystemClassLoader();
-            SpringApplication.run(applicationClass, args);
+            ConfigurableApplicationContext configurableApplicationContext = SpringApplication.run(applicationClass, args);
 
             List<TestCaseClassInfo> testCaseInfoList = new LinkedList<>();
             for (Resource resource : resources) {
@@ -206,6 +208,7 @@ public class GenTestCase extends AbstractGenTestCase{
             }
             generateTestCase(generateCase, testCaseInfoList, caseInput, applicationClass);
             printTestCase();
+            exit(configurableApplicationContext);
         } catch (Exception e){
             log.error("e=",e);
         }
