@@ -1,7 +1,0 @@
-freemarker:
-  cache: false #是否启用缓存，开发环境不建议启动因为涉及经常修改模板调试
-  settings:
-    classic_compatible: true
-  suffix: .ftl #一般格式tpl居多
-  charset: UTF-8
-  template-loader-path: classpath:/templates/ #模板路径，一般都是这个
