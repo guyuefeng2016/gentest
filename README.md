@@ -7,10 +7,10 @@
 (2) 引入当前依赖
 
      <dependency>
-            <groupId>com.gentest</groupId>
-            <artifactId>gen-test</artifactId>
-            <version>0.0.4</version>
-        </dependency>
+       <groupId>io.github.guyuefeng2016</groupId>
+       <artifactId>gen-test</artifactId>
+       <version>0.0.2</version>
+     </dependency>
 
 (3) 在springboot的启动类上面加上对gentest的扫描 @SpringBootApplication(scanBasePackages = {"com.gentest"})
 
