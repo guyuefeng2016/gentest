@@ -20,7 +20,7 @@
 (3) 在springboot的启动类上面加上对gentest的扫描 @SpringBootApplication(scanBasePackages = {"com.gentest"})
 
 
-(4) 使用注解
+(4) 使用注解【注解可以点进去查看，每一个属性的注解都比较清晰】
     GenCtx： 类和方法都有该注解时，方法注解优先级高，主要用来控制 测试哪些方法【public、private】，或者指定名字测试哪些方法，方法开启几个线程测试，测多少次，是否打印性能测试报告等功能
     GenParams: 配合GenParam使用，作用于方法上面
     GenParam: 作用于方法上面，主要用来指定方法的默认值参数
