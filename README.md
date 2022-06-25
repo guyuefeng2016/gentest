@@ -7,9 +7,7 @@
 
 使用步骤：
 
-(1) 下载gentest，然后mvn install 安装
-
-(2) 引入当前依赖
+(1) 引入当前依赖
 
      <dependency>
        <groupId>io.github.guyuefeng2016</groupId>
@@ -17,16 +15,16 @@
        <version>0.0.3</version>
      </dependency>
 
-(3) 在springboot的启动类上面加上对gentest的扫描 @SpringBootApplication(scanBasePackages = {"com.gentest"})
+(2) 在springboot的启动类上面加上对gentest的扫描 @SpringBootApplication(scanBasePackages = {"com.gentest"})
 
 
-(4) 使用注解【注解可以点进去查看，每一个属性的注解都比较清晰】
+(3) 使用注解【注解可以点进去查看，每一个属性的注解都比较清晰】
     
     GenCtx： 类和方法都有该注解时，方法注解优先级高，主要用来控制 测试哪些方法【public、private】，或者指定名字测试哪些方法，方法开启几个线程测试，测多少次，是否打印性能测试报告等功能
     GenParams: 配合GenParam使用，作用于方法上面
     GenParam: 作用于方法上面，主要用来指定方法的默认值参数
 
-(5) 然后随便创建一个java类，直接写一个main方法测试
+(4) 然后随便创建一个java类，直接写一个main方法测试
 
     public static void main(String[] args) {
         String testPackage = "com/safeheron/gateway/repository";
