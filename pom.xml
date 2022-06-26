@@ -6,7 +6,7 @@
 
     <groupId>io.github.guyuefeng2016</groupId>
     <artifactId>gen-test</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4</version>
     <packaging>jar</packaging>
     <name>gen-test</name>
     <url>https://github.com/guyuefeng2016/gentest</url>
