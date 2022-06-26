@@ -1239,6 +1239,15 @@ public class GenTestCase extends AbstractGenTestCase{
             conveterSimpleResultSouceCode(resultBuilder, "LocalDateTime.now()");
 
             flag = true;
+        }  else if (genericTypeAssign.isAssignableFrom(BigDecimal.class)) {
+            int i1 = RandomUtils.nextInt(0, 128);
+            BigDecimal bigDecimal = new BigDecimal(i1);
+            paramArgs[i] = bigDecimal;
+
+            conveterSimpleTypeSourceCode(sourceCodeMap, "BigDecimal", "new BigDecimal("+i1+")", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, "new BigDecimal("+i1+")");
+
+            flag = true;
         }
 
         return flag;
