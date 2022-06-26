@@ -7,6 +7,7 @@ import ${repositoryPackage};
 </#if>
 import java.time.*;
 import java.util.*;
+import java.math.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;

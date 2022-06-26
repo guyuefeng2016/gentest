@@ -51,11 +51,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
             <version>2.4.5</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <version>2.5.12</version>
+            <scope>provided</scope>
         </dependency>
             <dependency>
                 <groupId>io.springfox</groupId>
@@ -110,6 +112,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>
+            <scope>provided</scope>
             <version>3.0.2</version>
         </dependency>
         <dependency>

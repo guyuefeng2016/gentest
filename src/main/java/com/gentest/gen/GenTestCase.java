@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.Resource;
@@ -26,6 +25,7 @@ import org.springframework.util.CollectionUtils;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.*;
+import java.math.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -850,6 +850,23 @@ public class GenTestCase extends AbstractGenTestCase{
                     conveterSimpleTypeSourceCode(sourceCodeMap, "LocalDateTime", "LocalDateTime.parse("+v+", DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\"))", argIndex);
                     if (sourceCodeResultList != null) {
                         sourceCodeResultList.add("LocalDateTime.parse(" + v + ", DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\"))");
+                    }
+                } catch (Exception e){
+                    log.error("parseDate error, e=",e);
+                }
+            }
+            flag = true;
+        }  else if (genericTypeAssign.isAssignableFrom(BigDecimal.class)) {
+            for (String v: arrData){
+                try {
+                    String[] s = v.split("\\$");
+                    v = s[RandomUtils.nextInt(0,s.length)];
+                    BigDecimal bigDecimal = new BigDecimal(v);
+                    resList.add(bigDecimal);
+
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "BigDecimal", "new BigDecimal("+v+")", argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add("new BigDecimal("+v+")");
                     }
                 } catch (Exception e){
                     log.error("parseDate error, e=",e);
