@@ -36,6 +36,21 @@ public class ${repositoryName}Test extends GenBaseTest{
         <#else >
         ${souceCode.returnType!} result${souceCode.methodName?cap_first} = ${repositoryName?uncap_first}.${souceCode.methodName}(<#if souceCode.argSize gt 0><#list 0..souceCode.argSize-1 as i><#if i_has_next>var${i}0,<#else >var${i}0</#if></#list></#if>);
         log.info("result${souceCode.methodName?cap_first} : {}", result${souceCode.methodName?cap_first});
+        <#if souceCode.returnType?contains("Boolean") >
+        assert !result${souceCode.methodName?cap_first};
+        <#elseif souceCode.returnType?contains("IPage")>
+        assert result${souceCode.methodName?cap_first}.getRecords().size() > 0;
+        <#elseif souceCode.returnType?contains("PageVo")>
+        assert result${souceCode.methodName?cap_first}.getCount() > 0;
+        <#elseif souceCode.returnType?contains("PageDto")>
+        assert result${souceCode.methodName?cap_first}.getCount() > 0;
+        <#elseif souceCode.returnType?starts_with("java.util.List")>
+        assert result${souceCode.methodName?cap_first}.size() > 0;
+        <#elseif souceCode.returnType?starts_with("java.util.Map")>
+        assert result${souceCode.methodName?cap_first}.size() > 0;
+        <#else >
+        assert result${souceCode.methodName?cap_first} != null;
+        </#if>
         <#if souceCode.returnObj??>
         /**
         *  当前给定参数执行结果为：${souceCode.returnObj}
