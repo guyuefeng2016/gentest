@@ -25,7 +25,7 @@ import org.springframework.util.CollectionUtils;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.*;
-import java.math.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -306,7 +306,7 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param annotationMap
      * @return
      */
-    public static Map<Integer, StringBuilder> convertType(Type genericType, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, String> annotationMap){
+    private static Map<Integer, StringBuilder> convertType(Type genericType, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, String> annotationMap){
         Map<Integer, StringBuilder> sourceCodeMap = new LinkedHashMap<>();
         String annotationValue = annotationMap.get(argIndex.get());
         if (StringUtils.isNotEmpty(annotationValue)){
@@ -394,7 +394,7 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param argIndex
      * @return
      */
-    public static Boolean doConvertValueType(Class actualTypeArgClass, Object[] datas, List<Object> resList, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
+    private static Boolean doConvertValueType(Class actualTypeArgClass, Object[] datas, List<Object> resList, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
         Boolean conveterSimpleTypeFlag = conveterSimpleType(actualTypeArgClass, datas, resList, sourceCodeMap, null, argIndex);
         if (!conveterSimpleTypeFlag){
             Boolean aBoolean = converBeanType("", actualTypeArgClass, null, datas, resList, sourceCodeMap, argIndex);
@@ -414,8 +414,8 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param argIndex
      * @return
      */
-    public static Boolean doConvertNoValueType(Class actualTypeArgClass, Object[] newParams, Integer paramsIndex, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
-        Boolean aBoolean = adapterSimpleType(actualTypeArgClass, newParams, paramsIndex, sourceCodeMap, null, argIndex);
+    private static Boolean doConvertNoValueType(Class actualTypeArgClass, Object[] newParams, Integer paramsIndex, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
+        Boolean aBoolean = adapterSimpleType(actualTypeArgClass, null, newParams, paramsIndex, sourceCodeMap, null, argIndex);
         if (!aBoolean){
             Boolean adapterType = adapterBeanType("", actualTypeArgClass, null, newParams, paramsIndex, sourceCodeMap, argIndex);
             if (!adapterType){
@@ -434,7 +434,7 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param argIndex
      * @return
      */
-    public static Boolean doConvertListValueType(Class actualTypeArgClass, String annotationValue, List<Object> resListVal, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
+    private static Boolean doConvertListValueType(Class actualTypeArgClass, String annotationValue, List<Object> resListVal, Map<Integer, StringBuilder> sourceCodeMap, AtomicInteger argIndex){
         String[] splitArr = annotationValue.split(",");
         Boolean conveterSimpleTypeFlag = conveterSimpleType(actualTypeArgClass, splitArr, resListVal, sourceCodeMap, null, argIndex);
         if (!conveterSimpleTypeFlag) {
@@ -458,7 +458,7 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param sourceCodeMap
      * @return
      */
-    public static Map doConvertTypeMap(String typeName, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
+    private static Map doConvertTypeMap(String typeName, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
         List<Object> resListKey = new LinkedList<>();
         List<Object> resListVal = new LinkedList<>();
         Map map1;
@@ -576,7 +576,7 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param sourceCodeMap
      * @return
      */
-    public static List doConvertTypeList(String typeName, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
+    private static List doConvertTypeList(String typeName, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
         List<Object> resListVal = new LinkedList<>();
         int currentSourceSize = sourceCodeMap.size();
         conveterSimpleTypeSourceCode(sourceCodeMap, typeName, "new LinkedList<>()", argIndex);
@@ -631,7 +631,7 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param sourceCodeMap
      * @return
      */
-    public static Object parseParameterizedType(String typeName, Class<?> rawType, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
+    private static Object parseParameterizedType(String typeName, Class<?> rawType, String annotationValue, Type[] actualTypeArguments, Object[] paramArgs, AtomicInteger argIndex, Map<Integer, StringBuilder> sourceCodeMap){
         Object obj = null;
         if (rawType.isAssignableFrom(Map.class)){
             obj = doConvertTypeMap(typeName, annotationValue, actualTypeArguments, paramArgs, argIndex, sourceCodeMap);
@@ -817,7 +817,7 @@ public class GenTestCase extends AbstractGenTestCase{
             for (String v: arrData){
                 String[] s = v.split("\\$");
                 v = s[RandomUtils.nextInt(0,s.length)];
-                List<Object> objects = converPrimitive(genericTypeAssign, Arrays.asList(v), sourceCodeMap, sourceCodeResultList, argIndex);
+                List<Object> objects = converPrimitive(genericTypeAssign, null, Arrays.asList(v), sourceCodeMap, sourceCodeResultList, argIndex);
                 resList.add(objects.get(0));
             }
 
@@ -880,89 +880,135 @@ public class GenTestCase extends AbstractGenTestCase{
     /**
      *
      * @param genericTypeAssign
+     * @param fieldName
      * @param srcList
      * @param sourceCodeMap
      * @param sourceCodeResultList
      * @param argIndex
      * @return
      */
-    private static List<Object> converPrimitive(Class genericTypeAssign, List<String> srcList, Map<Integer, StringBuilder> sourceCodeMap, List<Object> sourceCodeResultList, AtomicInteger argIndex){
+    private static List<Object> converPrimitive(Class genericTypeAssign, String fieldName, List<String> srcList, Map<Integer, StringBuilder> sourceCodeMap, List<Object> sourceCodeResultList, AtomicInteger argIndex){
         List<Object> destList = new LinkedList<>();
-        if (CollectionUtils.isEmpty(srcList)){
-            return destList;
-        }
         if (genericTypeAssign.isAssignableFrom(int.class)){
-            destList.addAll(srcList.stream().map(x->{
-                int v = Integer.parseInt(x);
+            if (!CollectionUtils.isEmpty(srcList)) {
+                destList.addAll(srcList.stream().map(x -> {
+                    int v = Integer.parseInt(x);
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "int", v, argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v);
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Integer v = randomInteger(fieldName);
+                destList.add(v);
                 conveterSimpleTypeSourceCode(sourceCodeMap, "int", v, argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v);
-                }
-                return v;
-            }).collect(Collectors.toList()));
+            }
         } else if (genericTypeAssign.isAssignableFrom(short.class)){
-            destList.addAll(srcList.stream().map(x->{
-                short v = Short.parseShort(x);
+            if (!CollectionUtils.isEmpty(srcList)){
+                destList.addAll(srcList.stream().map(x->{
+                    short v = Short.parseShort(x);
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "short", v, argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v);
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Short v = randomShort(fieldName);
                 conveterSimpleTypeSourceCode(sourceCodeMap, "short", v, argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v);
-                }
-                return v;
-            }).collect(Collectors.toList()));
+                destList.add(v);
+            }
         } else if (genericTypeAssign.isAssignableFrom(float.class)){
-            destList.addAll(srcList.stream().map(x->{
-                float v = Float.parseFloat(x);
-                conveterSimpleTypeSourceCode(sourceCodeMap, "float", v+"f", argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v+"f");
-                }
-                return v;
-            }).collect(Collectors.toList()));
+            if (!CollectionUtils.isEmpty(srcList)) {
+                destList.addAll(srcList.stream().map(x -> {
+                    float v = Float.parseFloat(x);
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "float", v + "f", argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v + "f");
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Float v = randomFloat(fieldName);
+                conveterSimpleTypeSourceCode(sourceCodeMap, "float", v + "f", argIndex);
+                destList.add(v);
+            }
         } else if (genericTypeAssign.isAssignableFrom(double.class)){
-            destList.addAll(srcList.stream().map(x->{
-                double v = Double.parseDouble(x);
+            if (!CollectionUtils.isEmpty(srcList)){
+                destList.addAll(srcList.stream().map(x->{
+                    double v = Double.parseDouble(x);
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "double", v+"d", argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v+"d");
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Double v = randomDouble(fieldName);
                 conveterSimpleTypeSourceCode(sourceCodeMap, "double", v+"d", argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v+"d");
-                }
-                return v;
-            }).collect(Collectors.toList()));
+                destList.add(v);
+            }
         } else if (genericTypeAssign.isAssignableFrom(long.class)){
-            destList.addAll(srcList.stream().map(x->{
-                long v = Long.parseLong(x);
+            if (!CollectionUtils.isEmpty(srcList)){
+                destList.addAll(srcList.stream().map(x->{
+                    long v = Long.parseLong(x);
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "long", v+"L", argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v+"L");
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Long v = randomLong(fieldName);
                 conveterSimpleTypeSourceCode(sourceCodeMap, "long", v+"L", argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v+"L");
-                }
-                return v;
-            }).collect(Collectors.toList()));
+                destList.add(v);
+            }
         } else if (genericTypeAssign.isAssignableFrom(boolean.class)){
-            destList.addAll(srcList.stream().map(x->{
-                boolean v = Boolean.parseBoolean(x);
+            if (!CollectionUtils.isEmpty(srcList)) {
+                destList.addAll(srcList.stream().map(x -> {
+                    boolean v = Boolean.parseBoolean(x);
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "boolean", v, argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v);
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Boolean v = randomBoolean(fieldName);
                 conveterSimpleTypeSourceCode(sourceCodeMap, "boolean", v, argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v);
-                }
-                return v;
-            }).collect(Collectors.toList()));
+                destList.add(v);
+            }
         } else if (genericTypeAssign.isAssignableFrom(byte.class)){
-            destList.addAll(srcList.stream().map(x->{
-                byte v = Byte.parseByte(x);
+            if (!CollectionUtils.isEmpty(srcList)) {
+                destList.addAll(srcList.stream().map(x -> {
+                    byte v = Byte.parseByte(x);
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "byte", v, argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v);
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Byte v = randomByte(fieldName);
                 conveterSimpleTypeSourceCode(sourceCodeMap, "byte", v, argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v);
-                }
-                return v;
-            }).collect(Collectors.toList()));
+                destList.add(v);
+            }
         } else if (genericTypeAssign.isAssignableFrom(char.class)){
-            destList.addAll(srcList.stream().map(x-> {
-                char v = x.toCharArray()[0];
+            if (!CollectionUtils.isEmpty(srcList)) {
+                destList.addAll(srcList.stream().map(x -> {
+                    char v = x.toCharArray()[0];
+                    conveterSimpleTypeSourceCode(sourceCodeMap, "char", v, argIndex);
+                    if (sourceCodeResultList != null) {
+                        sourceCodeResultList.add(v);
+                    }
+                    return v;
+                }).collect(Collectors.toList()));
+            } else {
+                Character v = randomChar(fieldName);
                 conveterSimpleTypeSourceCode(sourceCodeMap, "char", v, argIndex);
-                if (sourceCodeResultList != null) {
-                    sourceCodeResultList.add(v);
-                }
-                return v;
-            }).collect(Collectors.toList()));
+                destList.add(v);
+            }
         }
         return destList;
     }
@@ -1066,7 +1112,7 @@ public class GenTestCase extends AbstractGenTestCase{
                             Object[] newParams = new Object[1];
                             int newI= 0;
                             StringBuilder resultBuilder = new StringBuilder();
-                            Boolean convertSuss = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
+                            Boolean convertSuss = adapterSimpleType(genericTypeClass, fieldName, newParams, newI, null, resultBuilder, argIndex);
                             setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
 
                             if (convertSuss){
@@ -1139,10 +1185,10 @@ public class GenTestCase extends AbstractGenTestCase{
      * @param argIndex
      * @return
      */
-    private static Boolean adapterSimpleType(Class genericTypeAssign, Object[] paramArgs, int i, Map<Integer, StringBuilder> sourceCodeMap, StringBuilder resultBuilder, AtomicInteger argIndex){
+    private static Boolean adapterSimpleType(Class genericTypeAssign, String fieldName, Object[] paramArgs, int i, Map<Integer, StringBuilder> sourceCodeMap, StringBuilder resultBuilder, AtomicInteger argIndex){
         boolean flag = false;
         if (genericTypeAssign.isAssignableFrom(Boolean.class)){
-            boolean b = RandomUtils.nextBoolean();
+            boolean b = randomBoolean(fieldName);
             paramArgs[i] = b;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Boolean", b, argIndex);
@@ -1150,7 +1196,7 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Character.class)){
-            Character character = Character.valueOf((char) RandomUtils.nextInt(70, 120));
+            Character character = randomChar(fieldName);
             paramArgs[i] = character;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Character", character, argIndex);
@@ -1158,7 +1204,7 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Byte.class)){
-            int i1 = RandomUtils.nextInt(0, 2);
+            int i1 = randomByte(fieldName);
             paramArgs[i] = i1;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Byte", i1, argIndex);
@@ -1166,7 +1212,7 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Short.class)){
-            int i1 = RandomUtils.nextInt(0, 32767);
+            int i1 = randomShort(fieldName);
             paramArgs[i] = i1;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Short", i1, argIndex);
@@ -1174,7 +1220,7 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Integer.class) ) {
-            int i1 = RandomUtils.nextInt(0, Integer.MAX_VALUE);
+            int i1 = randomInteger(fieldName);
             paramArgs[i] = i1;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Integer", i1, argIndex);
@@ -1182,7 +1228,7 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Long.class)) {
-            long i1 = RandomUtils.nextLong(0, Integer.MAX_VALUE);
+            long i1 = randomLong(fieldName);
             paramArgs[i] = i1;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Long", i1+"L", argIndex);
@@ -1190,7 +1236,7 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Float.class)) {
-            float i1 = RandomUtils.nextFloat(0, Integer.MAX_VALUE);
+            float i1 = randomFloat(fieldName);
             paramArgs[i] = i1;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Float", i1+"f", argIndex);
@@ -1198,7 +1244,7 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(Double.class)) {
-            Double i1 = RandomUtils.nextDouble(0, Integer.MAX_VALUE);
+            Double i1 = randomDouble(fieldName);
             paramArgs[i] = i1;
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Double", i1+"d", argIndex);
@@ -1206,46 +1252,45 @@ public class GenTestCase extends AbstractGenTestCase{
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(String.class)){
-            paramArgs[i] = "guyuefeng-test-string";
+            paramArgs[i] = randomString(fieldName);
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "String", "\""+paramArgs[i]+"\"", argIndex);
             conveterSimpleResultSouceCode(resultBuilder, "\""+paramArgs[i]+"\"");
 
             flag = true;
         } else if (genericTypeAssign.isPrimitive()){
-            int i1 = RandomUtils.nextInt(0, 128);
-            paramArgs[i] = i1;
-            converPrimitive(genericTypeAssign, Arrays.asList(i1+""), sourceCodeMap, null, argIndex);
-            conveterSimpleResultSouceCode(resultBuilder, i1);
+            List<Object> dest = converPrimitive(genericTypeAssign, fieldName, null, sourceCodeMap, null, argIndex);
+            Object v = dest.get(0);
+            paramArgs[i] = v;
+            conveterSimpleResultSouceCode(resultBuilder, v);
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Object.class)){
-            paramArgs[i] = "guyuefeng-test-object";
+            paramArgs[i] = randomObject(fieldName);
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Object", "\""+paramArgs[i]+"\"", argIndex);
             conveterSimpleResultSouceCode(resultBuilder, "\""+paramArgs[i]+"\"");
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(Date.class)){
-            paramArgs[i] = new Date();
+            paramArgs[i] = randomDate(fieldName);
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "Date", "new Date()", argIndex);
             conveterSimpleResultSouceCode(resultBuilder, "new Date()");
 
             flag = true;
         } else if (genericTypeAssign.isAssignableFrom(LocalDateTime.class)){
-            paramArgs[i] = LocalDateTime.now();
+            paramArgs[i] = randomLocalDateTime(fieldName);
 
             conveterSimpleTypeSourceCode(sourceCodeMap, "LocalDateTime", "LocalDateTime.now()", argIndex);
             conveterSimpleResultSouceCode(resultBuilder, "LocalDateTime.now()");
 
             flag = true;
         }  else if (genericTypeAssign.isAssignableFrom(BigDecimal.class)) {
-            int i1 = RandomUtils.nextInt(0, 128);
-            BigDecimal bigDecimal = new BigDecimal(i1);
+            BigDecimal bigDecimal = randomBigDecimal(fieldName);
             paramArgs[i] = bigDecimal;
-
-            conveterSimpleTypeSourceCode(sourceCodeMap, "BigDecimal", "new BigDecimal("+i1+")", argIndex);
-            conveterSimpleResultSouceCode(resultBuilder, "new BigDecimal("+i1+")");
+            double v = bigDecimal.doubleValue();
+            conveterSimpleTypeSourceCode(sourceCodeMap, "BigDecimal", "new BigDecimal("+v+")", argIndex);
+            conveterSimpleResultSouceCode(resultBuilder, "new BigDecimal("+v+")");
 
             flag = true;
         }
@@ -1318,7 +1363,7 @@ public class GenTestCase extends AbstractGenTestCase{
                         Object[] newParams = new Object[1];
                         int newI= 0;
                         StringBuilder resultBuilder = new StringBuilder();
-                        Boolean aBoolean = adapterSimpleType(genericTypeClass, newParams, newI, null, resultBuilder, argIndex);
+                        Boolean aBoolean = adapterSimpleType(genericTypeClass, fieldName, newParams, newI, null, resultBuilder, argIndex);
                         setBeanFiledSourceCode(fieldName, sourceCodeMap, localBeanIndex, resultBuilder, argIndex);
 
                         if (aBoolean){

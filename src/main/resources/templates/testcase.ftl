@@ -51,11 +51,6 @@ public class ${repositoryName}Test extends GenBaseTest{
         <#else >
         assert result${souceCode.methodName?cap_first} != null;
         </#if>
-        <#if souceCode.returnObj??>
-        /**
-        *  当前给定参数执行结果为：${souceCode.returnObj}
-        */
-        </#if>
         </#if>
     }
 </#if>

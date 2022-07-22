@@ -4,6 +4,8 @@
     <list default="true" id="4bbd49d8-2315-462f-ae1a-c63e2b9bd25a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gen/AbstractGenTestCase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gen/AbstractGenTestCase.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/gentest/gen/GenTestCase.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/templates/testcase.ftl" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/templates/testcase.ftl" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -96,7 +98,20 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.Applications">
+  <component name="RunManager" selected="Application.GenTestCase">
+    <configuration name="AbstractGenTestCase" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.gentest.gen.AbstractGenTestCase" />
+      <module name="gentest" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.gentest.gen.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Applications" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.gentest.Applications" />
       <module name="gentest" />
@@ -136,16 +151,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Test1.test1" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="gentest" />
-      <option name="PACKAGE_NAME" value="" />
-      <option name="MAIN_CLASS_NAME" value="Test1" />
-      <option name="METHOD_NAME" value="test1" />
-      <option name="TEST_OBJECT" value="method" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Test1.test2" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="gentest" />
       <option name="PACKAGE_NAME" value="" />
@@ -158,11 +163,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.Applications" />
         <item itemvalue="Application.GenTestCase" />
+        <item itemvalue="Application.AbstractGenTestCase" />
+        <item itemvalue="Application.Applications" />
         <item itemvalue="JUnit.Test1.test2" />
         <item itemvalue="Application.GenerateFileService" />
-        <item itemvalue="JUnit.Test1.test1" />
       </list>
     </recent_temporary>
   </component>
@@ -187,7 +192,12 @@
       <workItem from="1656062501409" duration="736000" />
       <workItem from="1656068152028" duration="80000" />
       <workItem from="1656169653146" duration="5586000" />
-      <workItem from="1657249166614" duration="2729000" />
+      <workItem from="1657249166614" duration="2816000" />
+      <workItem from="1657613610249" duration="986000" />
+      <workItem from="1657790033742" duration="1876000" />
+      <workItem from="1657809970064" duration="87000" />
+      <workItem from="1657854445206" duration="14659000" />
+      <workItem from="1658132925799" duration="7515000" />
     </task>
     <servers />
   </component>
@@ -226,7 +236,7 @@
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/src/main/java/com/gentest/common/thread/GenTaskExecutor.java</url>
           <line>28</line>
-          <properties class="com.gentest.common.thread.GenTaskExecutor" method="&lt;init&gt;">
+          <properties class="com.gentest.common.thread.GenTaskExecutor">
             <option name="EMULATED" value="true" />
           </properties>
           <option name="timeStamp" value="1" />
